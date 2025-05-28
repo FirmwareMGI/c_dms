@@ -1,0 +1,7 @@
+{
+  "C_Cpp.errorSquiggles": "disabled",
+  "cmake.sourceDirectory": "/home/pi/mel/dms_c/iec61850_client_example1",
+  "files.associations": {
+    "hal_thread.h": "c"
+  }
+}

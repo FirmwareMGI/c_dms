@@ -1,0 +1,21 @@
+{
+	"folders": [
+		{
+			"path": ".."
+		}
+	],
+	"settings": {
+		"files.associations": {
+			"hal_thread.h": "c",
+			"mysql.h": "c",
+			"mqttclient.h": "c",
+			"iec_utils.h": "c",
+			"comms.h": "c",
+			"stdio.h": "c",
+			"time.h": "c",
+			"typeinfo": "c",
+			"database.h": "c",
+			"list_utils.h": "c"
+		}
+	}
+}
