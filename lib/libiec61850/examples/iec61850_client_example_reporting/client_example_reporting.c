@@ -31,6 +31,7 @@ MQTTClient mqttClient;
 static int running = 1;
 
 char machine_code_[64] = "";
+char id_device_[64] = ""; // Default value, can be overridden by config
 
 typedef struct {
     char dataset[128];
@@ -43,6 +44,7 @@ typedef struct {
     ReportConfig reports[MAX_REPORTS];
     int reportCount;
     char machineCode[64];  // Optional field for machine code
+    char id_device[64];    // Optional field for device ID
 } HostConfig;
 
 typedef struct {
@@ -169,7 +171,8 @@ void reportCallbackFunction(void* parameter, ClientReport report)
         pubmsg.retained = 0;
         char topic[150];
         // printf("MachineCode: %s\n",);
-        snprintf(topic, sizeof(topic), "DMS/%s/IEC61850/Reports/%s", machine_code_, entryNameBuffer);
+        printf("id_device_: %s\n", id_device_);
+        snprintf(topic, sizeof(topic), "DMS/%s/IEC61850/Reports/%s/%s", machine_code_,id_device_,entryNameBuffer);
 
 
 
@@ -209,6 +212,8 @@ int loadHostConfigs(const char* filename, HostConfig* host)
     cJSON* ip = cJSON_GetObjectItem(root, "localIP");
     cJSON* port = cJSON_GetObjectItem(root, "port");
     cJSON* machine_code = cJSON_GetObjectItem(root, "machineCode");
+    cJSON* id_device = cJSON_GetObjectItem(root, "idDevice");
+
     if (!ip || !port) {
         cJSON_Delete(root);
         return 0;
@@ -220,6 +225,11 @@ int loadHostConfigs(const char* filename, HostConfig* host)
         strncpy(host->machineCode, machine_code->valuestring, sizeof(host->machineCode));
     } else {
         host->machineCode[0] = '\0'; // Default to empty if not provided
+    }
+    if (id_device) {
+        strncpy(host->id_device, id_device->valuestring, sizeof(host->id_device));
+    } else {
+        host->id_device[0] = '\0'; // Default to empty if not provided
     }
 
     cJSON* reportList = cJSON_GetObjectItem(root, "reports");
@@ -268,6 +278,8 @@ int main(int argc, char** argv)
         return 1;
     }
     strncpy(machine_code_, hostConfig.machineCode, sizeof(machine_code_));
+    strncpy(id_device_, hostConfig.id_device, sizeof(id_device_));
+
 
     
     for (int j = 0; j < hostConfig.reportCount; j++) {

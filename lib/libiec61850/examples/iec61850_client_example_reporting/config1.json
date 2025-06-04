@@ -1,545 +1,564 @@
 {
-  "iedName": "BCUCPL",
-  "localIP": "192.168.2.4",
+  "iedName": "TEMPLATE",
+  "localIP": "192.168.2.201",
   "port": "102",
   "machineCode": "0201160044",
-  "id_device" : 1,
+  "idDevice": "11",
   "control": [
     {
       "id": 0,
-      "object": "BCUCPLCONTROL1.LLN0.Mod",
-      "ctlModel": "direct-with-enhanced-security"
+      "object": "TEMPLATEANN.LLN0.Mod",
+      "ctlModel": "status-only"
     },
     {
       "id": 1,
-      "object": "BCUCPLCONTROL1.CILO1.Mod",
+      "object": "TEMPLATEANN.ALMGGIO10.Mod",
       "ctlModel": "status-only"
     },
     {
       "id": 2,
-      "object": "BCUCPLCONTROL1.CILO2.Mod",
+      "object": "TEMPLATEANN.ETHGGIO11.Mod",
       "ctlModel": "status-only"
     },
     {
       "id": 3,
-      "object": "BCUCPLCONTROL1.CSWI1.Mod",
+      "object": "TEMPLATEANN.INGGIO1.Mod",
       "ctlModel": "status-only"
     },
     {
       "id": 4,
-      "object": "BCUCPLCONTROL1.CSWI1.Pos",
-      "ctlModel": "sbo-with-enhanced-security"
+      "object": "TEMPLATEANN.INGGIO12.Mod",
+      "ctlModel": "status-only"
     },
     {
       "id": 5,
-      "object": "BCUCPLCONTROL1.CSWI2.Mod",
+      "object": "TEMPLATEANN.LTGGIO5.Mod",
       "ctlModel": "status-only"
     },
     {
       "id": 6,
-      "object": "BCUCPLCONTROL1.CSWI2.Pos",
-      "ctlModel": "sbo-with-enhanced-security"
+      "object": "TEMPLATEANN.MISCGGIO8.Mod",
+      "ctlModel": "status-only"
     },
     {
       "id": 7,
-      "object": "BCUCPLCONTROL1.CSWI3.Mod",
+      "object": "TEMPLATEANN.MOTGGIO7.Mod",
       "ctlModel": "status-only"
     },
     {
       "id": 8,
-      "object": "BCUCPLCONTROL1.CSWI3.Pos",
-      "ctlModel": "sbo-with-enhanced-security"
+      "object": "TEMPLATEANN.MVGGIO13.Mod",
+      "ctlModel": "status-only"
     },
     {
       "id": 9,
-      "object": "BCUCPLCONTROL1.CSWI9.Mod",
+      "object": "TEMPLATEANN.OUTGGIO2.Mod",
       "ctlModel": "status-only"
     },
     {
       "id": 10,
-      "object": "BCUCPLCONTROL1.CSWI9.Pos",
-      "ctlModel": "sbo-with-enhanced-security"
+      "object": "TEMPLATEANN.RAGGIO15.Mod",
+      "ctlModel": "status-only"
     },
     {
       "id": 11,
-      "object": "BCUCPLCONTROL1.GBAY1.Mod",
+      "object": "TEMPLATEANN.SCGGIO14.Mod",
       "ctlModel": "status-only"
     },
     {
       "id": 12,
-      "object": "BCUCPLCONTROL1.GBAY1.EnaSBMC",
-      "ctlModel": "direct-with-enhanced-security"
+      "object": "TEMPLATEANN.SVGGIO3.Mod",
+      "ctlModel": "status-only"
     },
     {
       "id": 13,
-      "object": "BCUCPLCONTROL1.GBAY1.Loc",
-      "ctlModel": "direct-with-enhanced-security"
+      "object": "TEMPLATEANN.SVTGGIO4.Mod",
+      "ctlModel": "status-only"
     },
     {
       "id": 14,
-      "object": "BCUCPLCONTROL1.GGIO1.Mod",
+      "object": "TEMPLATEANN.TLEDGGIO6.Mod",
       "ctlModel": "status-only"
     },
     {
       "id": 15,
-      "object": "BCUCPLCONTROL1.GGIO1.SPCSO1",
-      "ctlModel": "direct-with-normal-security"
+      "object": "TEMPLATEANN.VBGGIO9.Mod",
+      "ctlModel": "status-only"
     },
     {
       "id": 16,
-      "object": "BCUCPLCONTROL1.GGIO1.SPCSO2",
-      "ctlModel": "direct-with-enhanced-security"
+      "object": "TEMPLATECFG.LLN0.Mod",
+      "ctlModel": "status-only"
     },
     {
       "id": 17,
-      "object": "BCUCPLCONTROL1.GGIO10.Mod",
+      "object": "TEMPLATECON.LLN0.Mod",
       "ctlModel": "status-only"
     },
     {
       "id": 18,
-      "object": "BCUCPLCONTROL1.GGIO3.Mod",
+      "object": "TEMPLATECON.RBGGIO1.Mod",
       "ctlModel": "status-only"
     },
     {
       "id": 19,
-      "object": "BCUCPLCONTROL1.GGIO4.Mod",
-      "ctlModel": "status-only"
+      "object": "TEMPLATECON.RBGGIO1.SPCSO01",
+      "ctlModel": "direct-with-normal-security"
     },
     {
       "id": 20,
-      "object": "BCUCPLCONTROL1.GGIO5.Mod",
-      "ctlModel": "status-only"
+      "object": "TEMPLATECON.RBGGIO1.SPCSO02",
+      "ctlModel": "direct-with-normal-security"
     },
     {
       "id": 21,
-      "object": "BCUCPLCONTROL1.GGIO7.Mod",
-      "ctlModel": "status-only"
+      "object": "TEMPLATECON.RBGGIO1.SPCSO03",
+      "ctlModel": "direct-with-normal-security"
     },
     {
       "id": 22,
-      "object": "BCUCPLCONTROL1.GGIO8.Mod",
-      "ctlModel": "status-only"
+      "object": "TEMPLATECON.RBGGIO1.SPCSO04",
+      "ctlModel": "direct-with-normal-security"
     },
     {
       "id": 23,
-      "object": "BCUCPLCONTROL1.GGIO9.Mod",
-      "ctlModel": "status-only"
+      "object": "TEMPLATECON.RBGGIO1.SPCSO05",
+      "ctlModel": "direct-with-normal-security"
     },
     {
       "id": 24,
-      "object": "BCUCPLCONTROL1.GGSS1.Mod",
-      "ctlModel": "status-only"
+      "object": "TEMPLATECON.RBGGIO1.SPCSO06",
+      "ctlModel": "direct-with-normal-security"
     },
     {
       "id": 25,
-      "object": "BCUCPLCONTROL1.GGSS1.LocSubst",
-      "ctlModel": "direct-with-enhanced-security"
+      "object": "TEMPLATECON.RBGGIO1.SPCSO07",
+      "ctlModel": "direct-with-normal-security"
     },
     {
       "id": 26,
-      "object": "BCUCPLCONTROL1.RSYN1.Mod",
-      "ctlModel": "status-only"
+      "object": "TEMPLATECON.RBGGIO1.SPCSO08",
+      "ctlModel": "direct-with-normal-security"
     },
     {
       "id": 27,
-      "object": "BCUCPLCONTROL1.RSYN1.Ena",
-      "ctlModel": "direct-with-enhanced-security"
+      "object": "TEMPLATEMET.LLN0.Mod",
+      "ctlModel": "status-only"
     },
     {
       "id": 28,
-      "object": "BCUCPLCONTROL1.RSYN1.EnaSec",
-      "ctlModel": "direct-with-enhanced-security"
+      "object": "TEMPLATEMET.METMDST1.Mod",
+      "ctlModel": "status-only"
     },
     {
       "id": 29,
-      "object": "BCUCPLCONTROL1.XSWI1.Mod",
+      "object": "TEMPLATEMET.METMHAI1.Mod",
       "ctlModel": "status-only"
     },
     {
       "id": 30,
-      "object": "BCUCPLCONTROL1.XSWI1.BlkCls",
+      "object": "TEMPLATEMET.METMMXU1.Mod",
       "ctlModel": "status-only"
     },
     {
       "id": 31,
-      "object": "BCUCPLCONTROL1.XSWI1.BlkOpn",
+      "object": "TEMPLATEMET.METMSQI1.Mod",
       "ctlModel": "status-only"
     },
     {
       "id": 32,
-      "object": "BCUCPLCONTROL2.LLN0.Mod",
-      "ctlModel": "direct-with-enhanced-security"
+      "object": "TEMPLATEMET.METMSTA1.Mod",
+      "ctlModel": "status-only"
     },
     {
       "id": 33,
-      "object": "BCUCPLCONTROL2.CILO3.Mod",
+      "object": "TEMPLATEMET.MOTORMMOT1.Mod",
       "ctlModel": "status-only"
     },
     {
       "id": 34,
-      "object": "BCUCPLCONTROL2.GAPC11.Mod",
+      "object": "TEMPLATEMET.RMSMMXU2.Mod",
       "ctlModel": "status-only"
     },
     {
       "id": 35,
-      "object": "BCUCPLCONTROL2.GAPC12.Mod",
+      "object": "TEMPLATEPRO.LLN0.Mod",
       "ctlModel": "status-only"
     },
     {
       "id": 36,
-      "object": "BCUCPLCONTROL2.GAPC13.Mod",
+      "object": "TEMPLATEPRO.A49PTTR1.Mod",
       "ctlModel": "status-only"
     },
     {
       "id": 37,
-      "object": "BCUCPLCONTROL2.GAPC14.Mod",
+      "object": "TEMPLATEPRO.A55POPF1.Mod",
       "ctlModel": "status-only"
     },
     {
       "id": 38,
-      "object": "BCUCPLCONTROL2.GAPC15.Mod",
+      "object": "TEMPLATEPRO.ABSLOPMRI1.Mod",
       "ctlModel": "status-only"
     },
     {
       "id": 39,
-      "object": "BCUCPLCONTROL2.GAPC16.Mod",
+      "object": "TEMPLATEPRO.BFR1RBRF1.Mod",
       "ctlModel": "status-only"
     },
     {
       "id": 40,
-      "object": "BCUCPLCONTROL2.GAPC4.Mod",
+      "object": "TEMPLATEPRO.BK1XCBR1.Mod",
       "ctlModel": "status-only"
     },
     {
       "id": 41,
-      "object": "BCUCPLCONTROL2.GAPC5.Mod",
+      "object": "TEMPLATEPRO.BK1XCBR1.Pos",
       "ctlModel": "status-only"
     },
     {
       "id": 42,
-      "object": "BCUCPLCONTROL2.GGIO2.Mod",
+      "object": "TEMPLATEPRO.BK1XCBR1.BlkOpn",
       "ctlModel": "status-only"
     },
     {
       "id": 43,
-      "object": "BCUCPLCONTROL2.GGIO3.Mod",
+      "object": "TEMPLATEPRO.BK1XCBR1.BlkCls",
       "ctlModel": "status-only"
     },
     {
       "id": 44,
-      "object": "BCUCPLCONTROL2.GGIO4.Mod",
+      "object": "TEMPLATEPRO.D1TPTOF1.Mod",
       "ctlModel": "status-only"
     },
     {
       "id": 45,
-      "object": "BCUCPLCONTROL2.GGSS1.Mod",
+      "object": "TEMPLATEPRO.D2TPTOF2.Mod",
       "ctlModel": "status-only"
     },
     {
       "id": 46,
-      "object": "BCUCPLCONTROL2.GGSS1.LocSubst",
+      "object": "TEMPLATEPRO.G1TPIOC5.Mod",
       "ctlModel": "status-only"
     },
     {
       "id": 47,
-      "object": "BCUCPLCONTROL2.RSYN1.Mod",
+      "object": "TEMPLATEPRO.G1TPTOC4.Mod",
       "ctlModel": "status-only"
     },
     {
       "id": 48,
-      "object": "BCUCPLCONTROL2.RSYN1.SGEna1",
-      "ctlModel": "direct-with-normal-security"
+      "object": "TEMPLATEPRO.G2TPIOC6.Mod",
+      "ctlModel": "status-only"
     },
     {
       "id": 49,
-      "object": "BCUCPLCONTROL2.XCBR1.Mod",
+      "object": "TEMPLATEPRO.GAFPIOC11.Mod",
       "ctlModel": "status-only"
     },
     {
       "id": 50,
-      "object": "BCUCPLCONTROL2.XSWI1.Mod",
+      "object": "TEMPLATEPRO.JALRMPMSS1.Mod",
       "ctlModel": "status-only"
     },
     {
       "id": 51,
-      "object": "BCUCPLCONTROL2.XSWI1.BlkCls",
+      "object": "TEMPLATEPRO.JTRIPPMSS2.Mod",
       "ctlModel": "status-only"
     },
     {
       "id": 52,
-      "object": "BCUCPLCONTROL2.XSWI1.BlkOpn",
+      "object": "TEMPLATEPRO.LALRMPTUC1.Mod",
       "ctlModel": "status-only"
     },
     {
       "id": 53,
-      "object": "BCUCPLCONTROL2.XSWI2.Mod",
+      "object": "TEMPLATEPRO.LJTRPMSS3.Mod",
       "ctlModel": "status-only"
     },
     {
       "id": 54,
-      "object": "BCUCPLCONTROL2.XSWI2.BlkCls",
+      "object": "TEMPLATEPRO.LOPPTUV3.Mod",
       "ctlModel": "status-only"
     },
     {
       "id": 55,
-      "object": "BCUCPLCONTROL2.XSWI2.BlkOpn",
+      "object": "TEMPLATEPRO.LTRIPPTUC2.Mod",
       "ctlModel": "status-only"
     },
     {
       "id": 56,
-      "object": "BCUCPLCONTROL3.LLN0.Mod",
-      "ctlModel": "direct-with-enhanced-security"
-    },
-    {
-      "id": 57,
-      "object": "BCUCPLCONTROL3.GAPC1.Mod",
+      "object": "TEMPLATEPRO.MCCSWI1.Mod",
       "ctlModel": "status-only"
     },
     {
+      "id": 57,
+      "object": "TEMPLATEPRO.MCCSWI1.Pos",
+      "ctlModel": "direct-with-normal-security"
+    },
+    {
       "id": 58,
-      "object": "BCUCPLCONTROL3.GAPC2.Mod",
+      "object": "TEMPLATEPRO.N1TPIOC7.Mod",
       "ctlModel": "status-only"
     },
     {
       "id": 59,
-      "object": "BCUCPLCONTROL3.XCBR1.Mod",
+      "object": "TEMPLATEPRO.N1TPTOC6.Mod",
       "ctlModel": "status-only"
     },
     {
       "id": 60,
-      "object": "BCUCPLCONTROL3.XCBR1.BlkCls",
+      "object": "TEMPLATEPRO.N2TPIOC8.Mod",
       "ctlModel": "status-only"
     },
     {
       "id": 61,
-      "object": "BCUCPLCONTROL3.XCBR1.BlkOpn",
+      "object": "TEMPLATEPRO.NOSLOPMRI2.Mod",
       "ctlModel": "status-only"
     },
     {
       "id": 62,
-      "object": "BCUCPLCONTROL3.XCBR1.Pos",
+      "object": "TEMPLATEPRO.P1TPIOC1.Mod",
       "ctlModel": "status-only"
     },
     {
       "id": 63,
-      "object": "BCUCPLLD0.LLN0.Mod",
-      "ctlModel": "direct-with-enhanced-security"
+      "object": "TEMPLATEPRO.P1TPTOC3.Mod",
+      "ctlModel": "status-only"
     },
     {
       "id": 64,
-      "object": "BCUCPLLD0.LDBI1.Mod",
+      "object": "TEMPLATEPRO.P1TPTOV1.Mod",
       "ctlModel": "status-only"
     },
     {
       "id": 65,
-      "object": "BCUCPLLD0.LDBI1.ODDBSw",
-      "ctlModel": "direct-with-normal-security"
+      "object": "TEMPLATEPRO.P1TPTUV1.Mod",
+      "ctlModel": "status-only"
     },
     {
       "id": 66,
-      "object": "BCUCPLMEASUREMENT1.LLN0.Mod",
-      "ctlModel": "direct-with-enhanced-security"
+      "object": "TEMPLATEPRO.P2TPIOC2.Mod",
+      "ctlModel": "status-only"
     },
     {
       "id": 67,
-      "object": "BCUCPLMEASUREMENT1.GGIO1.Mod",
+      "object": "TEMPLATEPRO.P2TPTOV2.Mod",
       "ctlModel": "status-only"
     },
     {
       "id": 68,
-      "object": "BCUCPLMEASUREMENT1.rmsMMXU1.Mod",
+      "object": "TEMPLATEPRO.P2TPTUV2.Mod",
       "ctlModel": "status-only"
     },
     {
       "id": 69,
-      "object": "BCUCPLSYSTEM.LLN0.Mod",
-      "ctlModel": "direct-with-enhanced-security"
+      "object": "TEMPLATEPRO.PAFPIOC10.Mod",
+      "ctlModel": "status-only"
     },
     {
       "id": 70,
-      "object": "BCUCPLSYSTEM.C26xLDIA1.Mod",
+      "object": "TEMPLATEPRO.PTCTPTTR7.Mod",
+      "ctlModel": "status-only"
+    },
+    {
+      "id": 71,
+      "object": "TEMPLATEPRO.PWR1PDOP1.Mod",
+      "ctlModel": "status-only"
+    },
+    {
+      "id": 72,
+      "object": "TEMPLATEPRO.PWR1PDUP1.Mod",
+      "ctlModel": "status-only"
+    },
+    {
+      "id": 73,
+      "object": "TEMPLATEPRO.PWR2PDOP1.Mod",
+      "ctlModel": "status-only"
+    },
+    {
+      "id": 74,
+      "object": "TEMPLATEPRO.PWR2PDUP1.Mod",
+      "ctlModel": "status-only"
+    },
+    {
+      "id": 75,
+      "object": "TEMPLATEPRO.Q1TPIOC9.Mod",
+      "ctlModel": "status-only"
+    },
+    {
+      "id": 76,
+      "object": "TEMPLATEPRO.Q1TPTOC5.Mod",
+      "ctlModel": "status-only"
+    },
+    {
+      "id": 77,
+      "object": "TEMPLATEPRO.R49PTTR4.Mod",
+      "ctlModel": "status-only"
+    },
+    {
+      "id": 78,
+      "object": "TEMPLATEPRO.RS59PTOV4.Mod",
+      "ctlModel": "status-only"
+    },
+    {
+      "id": 79,
+      "object": "TEMPLATEPRO.RSLOPMRI5.Mod",
+      "ctlModel": "status-only"
+    },
+    {
+      "id": 80,
+      "object": "TEMPLATEPRO.S49PTTR3.Mod",
+      "ctlModel": "status-only"
+    },
+    {
+      "id": 81,
+      "object": "TEMPLATEPRO.SPDSALPZSU1.Mod",
+      "ctlModel": "status-only"
+    },
+    {
+      "id": 82,
+      "object": "TEMPLATEPRO.SPDSTRPZSU2.Mod",
+      "ctlModel": "status-only"
+    },
+    {
+      "id": 83,
+      "object": "TEMPLATEPRO.T47PTOV3.Mod",
+      "ctlModel": "status-only"
+    },
+    {
+      "id": 84,
+      "object": "TEMPLATEPRO.T49PTTR2.Mod",
+      "ctlModel": "status-only"
+    },
+    {
+      "id": 85,
+      "object": "TEMPLATEPRO.T55POPF2.Mod",
+      "ctlModel": "status-only"
+    },
+    {
+      "id": 86,
+      "object": "TEMPLATEPRO.TBSLOPMRI3.Mod",
+      "ctlModel": "status-only"
+    },
+    {
+      "id": 87,
+      "object": "TEMPLATEPRO.THRMLOPMRI4.Mod",
+      "ctlModel": "status-only"
+    },
+    {
+      "id": 88,
+      "object": "TEMPLATEPRO.TOL1PAFD1.Mod",
+      "ctlModel": "status-only"
+    },
+    {
+      "id": 89,
+      "object": "TEMPLATEPRO.TRIPPTRC1.Mod",
+      "ctlModel": "status-only"
+    },
+    {
+      "id": 90,
+      "object": "TEMPLATEPRO.UB46APTOC1.Mod",
+      "ctlModel": "status-only"
+    },
+    {
+      "id": 91,
+      "object": "TEMPLATEPRO.UB46TPTOC2.Mod",
+      "ctlModel": "status-only"
+    },
+    {
+      "id": 92,
+      "object": "TEMPLATEPRO.UVRSLOPMRI5.Mod",
+      "ctlModel": "status-only"
+    },
+    {
+      "id": 93,
+      "object": "TEMPLATEPRO.UVTRPTUV4.Mod",
       "ctlModel": "status-only"
     }
   ],
   "reports": [
     {
       "id": 0,
-      "dataSetReference": "BCUCPLCONTROL1/LLN0$LLN0URptStDs",
-      "rcb": "BCUCPLCONTROL1/LLN0$RP$urcbST",
-      "isEnable": true
+      "dataSetReference": "TEMPLATECFG/LLN0$URDSet07",
+      "rcb": "TEMPLATECFG/LLN0$RP$URep01",
+      "isEnable": false
     },
     {
       "id": 1,
-      "dataSetReference": "BCUCPLCONTROL1/LLN0$LLN0BRptStDs",
-      "rcb": "BCUCPLCONTROL1/LLN0$BR$brcbST01",
+      "dataSetReference": "TEMPLATECFG/LLN0$URDSet07",
+      "rcb": "TEMPLATECFG/LLN0$RP$URep02",
       "isEnable": false
     },
     {
       "id": 2,
-      "dataSetReference": "BCUCPLCONTROL1/LLN0$LLN0BRptStDs",
-      "rcb": "BCUCPLCONTROL1/LLN0$BR$brcbST02",
+      "dataSetReference": "TEMPLATECFG/LLN0$URDSet07",
+      "rcb": "TEMPLATECFG/LLN0$RP$URep03",
       "isEnable": false
     },
     {
       "id": 3,
-      "dataSetReference": "BCUCPLCONTROL1/LLN0$LLN0BRptStDs",
-      "rcb": "BCUCPLCONTROL1/LLN0$BR$brcbST03",
+      "dataSetReference": "TEMPLATECFG/LLN0$URDSet07",
+      "rcb": "TEMPLATECFG/LLN0$RP$URep04",
       "isEnable": false
     },
     {
       "id": 4,
-      "dataSetReference": "BCUCPLCONTROL1/LLN0$LLN0BRptStDs",
-      "rcb": "BCUCPLCONTROL1/LLN0$BR$brcbST04",
+      "dataSetReference": "TEMPLATECFG/LLN0$URDSet07",
+      "rcb": "TEMPLATECFG/LLN0$RP$URep05",
       "isEnable": false
     },
     {
       "id": 5,
-      "dataSetReference": "BCUCPLCONTROL2/LLN0$LLN0URptStDs",
-      "rcb": "BCUCPLCONTROL2/LLN0$BR$urcbST",
-      "isEnable": false
+      "dataSetReference": "TEMPLATECFG/LLN0$URDSet07",
+      "rcb": "TEMPLATECFG/LLN0$RP$URep06",
+      "isEnable": true
     },
     {
       "id": 6,
-      "dataSetReference": "BCUCPLCONTROL2/LLN0$LLN0BRptStDs",
-      "rcb": "BCUCPLCONTROL2/LLN0$BR$brcbST01",
+      "dataSetReference": "TEMPLATECFG/LLN0$URDSet07",
+      "rcb": "TEMPLATECFG/LLN0$RP$URep07",
       "isEnable": false
     },
     {
       "id": 7,
-      "dataSetReference": "BCUCPLCONTROL2/LLN0$LLN0BRptStDs",
-      "rcb": "BCUCPLCONTROL2/LLN0$BR$brcbST02",
+      "dataSetReference": "TEMPLATECFG/LLN0$BRDSet07",
+      "rcb": "TEMPLATECFG/LLN0$BR$BRep01",
       "isEnable": false
     },
     {
       "id": 8,
-      "dataSetReference": "BCUCPLCONTROL2/LLN0$LLN0BRptStDs",
-      "rcb": "BCUCPLCONTROL2/LLN0$BR$brcbST03",
+      "dataSetReference": "TEMPLATECFG/LLN0$BRDSet07",
+      "rcb": "TEMPLATECFG/LLN0$BR$BRep02",
       "isEnable": false
     },
     {
       "id": 9,
-      "dataSetReference": "BCUCPLCONTROL2/LLN0$LLN0BRptStDs",
-      "rcb": "BCUCPLCONTROL2/LLN0$BR$brcbST04",
+      "dataSetReference": "TEMPLATECFG/LLN0$BRDSet07",
+      "rcb": "TEMPLATECFG/LLN0$BR$BRep03",
       "isEnable": false
     },
     {
       "id": 10,
-      "dataSetReference": "BCUCPLCONTROL3/LLN0$LLN0URptStDs",
-      "rcb": "BCUCPLCONTROL3/LLN0$BR$urcbST",
+      "dataSetReference": "TEMPLATECFG/LLN0$BRDSet07",
+      "rcb": "TEMPLATECFG/LLN0$BR$BRep04",
       "isEnable": false
     },
     {
       "id": 11,
-      "dataSetReference": "BCUCPLCONTROL3/LLN0$LLN0BRptStDs",
-      "rcb": "BCUCPLCONTROL3/LLN0$BR$brcbST01",
+      "dataSetReference": "TEMPLATECFG/LLN0$BRDSet07",
+      "rcb": "TEMPLATECFG/LLN0$BR$BRep05",
       "isEnable": false
     },
     {
       "id": 12,
-      "dataSetReference": "BCUCPLCONTROL3/LLN0$LLN0BRptStDs",
-      "rcb": "BCUCPLCONTROL3/LLN0$BR$brcbST02",
+      "dataSetReference": "TEMPLATECFG/LLN0$BRDSet07",
+      "rcb": "TEMPLATECFG/LLN0$BR$BRep06",
       "isEnable": false
     },
     {
       "id": 13,
-      "dataSetReference": "BCUCPLCONTROL3/LLN0$LLN0BRptStDs",
-      "rcb": "BCUCPLCONTROL3/LLN0$BR$brcbST03",
-      "isEnable": false
-    },
-    {
-      "id": 14,
-      "dataSetReference": "BCUCPLCONTROL3/LLN0$LLN0BRptStDs",
-      "rcb": "BCUCPLCONTROL3/LLN0$BR$brcbST04",
-      "isEnable": false
-    },
-    {
-      "id": 15,
-      "dataSetReference": "BCUCPLLD0/LLN0$LLN0URptStDs",
-      "rcb": "BCUCPLLD0/LLN0$BR$urcbST",
-      "isEnable": false
-    },
-    {
-      "id": 16,
-      "dataSetReference": "BCUCPLLD0/LLN0$LLN0BRptStDs",
-      "rcb": "BCUCPLLD0/LLN0$BR$brcbST01",
-      "isEnable": false
-    },
-    {
-      "id": 17,
-      "dataSetReference": "BCUCPLLD0/LLN0$LLN0BRptStDs",
-      "rcb": "BCUCPLLD0/LLN0$BR$brcbST02",
-      "isEnable": false
-    },
-    {
-      "id": 18,
-      "dataSetReference": "BCUCPLLD0/LLN0$LLN0BRptStDs",
-      "rcb": "BCUCPLLD0/LLN0$BR$brcbST03",
-      "isEnable": false
-    },
-    {
-      "id": 19,
-      "dataSetReference": "BCUCPLLD0/LLN0$LLN0BRptStDs",
-      "rcb": "BCUCPLLD0/LLN0$BR$brcbST04",
-      "isEnable": false
-    },
-    {
-      "id": 20,
-      "dataSetReference": "BCUCPLMEASUREMENT1/LLN0$LLN0URptStDs",
-      "rcb": "BCUCPLMEASUREMENT1/LLN0$BR$urcbST",
-      "isEnable": false
-    },
-    {
-      "id": 21,
-      "dataSetReference": "BCUCPLMEASUREMENT1/LLN0$LLN0BRptStDs",
-      "rcb": "BCUCPLMEASUREMENT1/LLN0$BR$brcbST01",
-      "isEnable": false
-    },
-    {
-      "id": 22,
-      "dataSetReference": "BCUCPLMEASUREMENT1/LLN0$LLN0BRptStDs",
-      "rcb": "BCUCPLMEASUREMENT1/LLN0$BR$brcbST02",
-      "isEnable": false
-    },
-    {
-      "id": 23,
-      "dataSetReference": "BCUCPLMEASUREMENT1/LLN0$LLN0BRptStDs",
-      "rcb": "BCUCPLMEASUREMENT1/LLN0$BR$brcbST03",
-      "isEnable": false
-    },
-    {
-      "id": 24,
-      "dataSetReference": "BCUCPLMEASUREMENT1/LLN0$LLN0BRptStDs",
-      "rcb": "BCUCPLMEASUREMENT1/LLN0$BR$brcbST04",
-      "isEnable": false
-    },
-    {
-      "id": 25,
-      "dataSetReference": "BCUCPLSYSTEM/LLN0$LLN0URptStDs",
-      "rcb": "BCUCPLSYSTEM/LLN0$BR$urcbST",
-      "isEnable": false
-    },
-    {
-      "id": 26,
-      "dataSetReference": "BCUCPLSYSTEM/LLN0$LLN0BRptStDs",
-      "rcb": "BCUCPLSYSTEM/LLN0$BR$brcbST01",
-      "isEnable": false
-    },
-    {
-      "id": 27,
-      "dataSetReference": "BCUCPLSYSTEM/LLN0$LLN0BRptStDs",
-      "rcb": "BCUCPLSYSTEM/LLN0$BR$brcbST02",
-      "isEnable": false
-    },
-    {
-      "id": 28,
-      "dataSetReference": "BCUCPLSYSTEM/LLN0$LLN0BRptStDs",
-      "rcb": "BCUCPLSYSTEM/LLN0$BR$brcbST03",
-      "isEnable": false
-    },
-    {
-      "id": 29,
-      "dataSetReference": "BCUCPLSYSTEM/LLN0$LLN0BRptStDs",
-      "rcb": "BCUCPLSYSTEM/LLN0$BR$brcbST04",
+      "dataSetReference": "TEMPLATECFG/LLN0$BRDSet07",
+      "rcb": "TEMPLATECFG/LLN0$BR$BRep07",
       "isEnable": false
     }
   ]
