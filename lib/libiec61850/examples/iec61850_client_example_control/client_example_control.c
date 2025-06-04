@@ -10,7 +10,6 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-//cok
 static void commandTerminationHandler(void *parameter, ControlObjectClient connection)
 {
 

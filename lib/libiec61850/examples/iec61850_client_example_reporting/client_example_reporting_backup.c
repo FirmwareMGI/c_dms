@@ -437,19 +437,7 @@ main(int argc, char** argv)
                 sessions[i].dataset,
                 sessions[i].rcbName);
         }
-        // if (!MQTTClient_isConnected(mqttClient)) {
-        //     printf("MQTT disconnected. Attempting to reconnect...\n");
-        //     MQTTClient_connectOptions conn_opts = MQTTClient_connectOptions_initializer;
-        //     conn_opts.keepAliveInterval = 20;
-        //     conn_opts.cleansession = 1;
-            
-        //     int rc = MQTTClient_connect(mqttClient, &conn_opts);
-        //     if (rc != MQTTCLIENT_SUCCESS) {
-        //         printf("Failed to reconnect to MQTT broker, rc=%d\n", rc);
-        //     }
-        //     printf("Reconnected to MQTT broker.\n");
-        // }
-    
+
         Thread_sleep(1000);  // 1 second
     }
 
