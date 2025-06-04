@@ -1,8 +1,9 @@
 {
   "iedName": "BCUCPL",
-  "localIP": "192.168.2.25",
+  "localIP": "192.168.2.4",
   "port": "102",
   "machineCode": "0201160044",
+  "id_device" : 1,
   "control": [
     {
       "id": 0,
@@ -364,14 +365,14 @@
     {
       "id": 0,
       "dataSetReference": "BCUCPLCONTROL1/LLN0$LLN0URptStDs",
-      "rcb": "BCUCPLCONTROL1/LLN0$BR$urcbST",
-      "isEnable": false
+      "rcb": "BCUCPLCONTROL1/LLN0$RP$urcbST",
+      "isEnable": true
     },
     {
       "id": 1,
       "dataSetReference": "BCUCPLCONTROL1/LLN0$LLN0BRptStDs",
       "rcb": "BCUCPLCONTROL1/LLN0$BR$brcbST01",
-      "isEnable": true
+      "isEnable": false
     },
     {
       "id": 2,

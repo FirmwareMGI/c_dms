@@ -23,8 +23,10 @@
 
 #define MQTT_ADDRESS     "tcp://192.168.2.33:1883"
 #define MQTT_CLIENTID    "IEC61850_ReportClient"
-#define MQTT_QOS         1
+#define MQTT_QOS         2
 #define MQTT_TIMEOUT     10000L
+MQTTClient mqttClient;
+
 
 static int running = 1;
 
@@ -64,6 +66,37 @@ void sigint_handler(int signalId)
 {
     running = 0;
 }
+
+void cleanupMqttClient()
+{
+    MQTTClient_disconnect(mqttClient, MQTT_TIMEOUT);
+    MQTTClient_destroy(&mqttClient);
+}
+
+int initMqttClient()
+{
+    int rc;
+
+    rc = MQTTClient_create(&mqttClient, MQTT_ADDRESS, MQTT_CLIENTID, MQTTCLIENT_PERSISTENCE_NONE, NULL);
+    if (rc != MQTTCLIENT_SUCCESS) {
+        printf("MQTT client creation failed: %d\n", rc);
+        return rc;
+    }
+
+    MQTTClient_connectOptions conn_opts = MQTTClient_connectOptions_initializer;
+    conn_opts.keepAliveInterval = 5;
+    conn_opts.cleansession = 1;
+
+    rc = MQTTClient_connect(mqttClient, &conn_opts);
+    if (rc != MQTTCLIENT_SUCCESS) {
+        printf("MQTT connect failed: %d\n", rc);
+        MQTTClient_destroy(&mqttClient);
+        return rc;
+    }
+
+    return MQTTCLIENT_SUCCESS;
+}
+
 
 /* === MQTT Report Callback === */
 void reportCallbackFunction(void* parameter, ClientReport report)
@@ -129,26 +162,6 @@ void reportCallbackFunction(void* parameter, ClientReport report)
         printf("entry: %s, reason: %d, value: %s\n", entryName, reason, valBuffer);
         printf("Formatted timestamp: %s\n", timestampBuf);
 
-
-        MQTTClient client;
-        MQTTClient_connectOptions conn_opts = MQTTClient_connectOptions_initializer;
-        int rc = MQTTClient_create(&client, MQTT_ADDRESS, MQTT_CLIENTID, MQTTCLIENT_PERSISTENCE_NONE, NULL);
-
-        if (rc != MQTTCLIENT_SUCCESS) {
-            printf("MQTT client creation failed: %d\n", rc);
-            return;
-        }
-
-        conn_opts.keepAliveInterval = 20;
-        conn_opts.cleansession = 1;
-
-        rc = MQTTClient_connect(client, &conn_opts);
-        if (rc != MQTTCLIENT_SUCCESS) {
-            printf("MQTT connect failed: %d\n", rc);
-            MQTTClient_destroy(&client);
-            return;
-        }
-
         MQTTClient_message pubmsg = MQTTClient_message_initializer;
         pubmsg.payload = line;
         pubmsg.payloadlen = (int)strlen(line);
@@ -161,19 +174,14 @@ void reportCallbackFunction(void* parameter, ClientReport report)
 
 
         MQTTClient_deliveryToken token;
-        rc = MQTTClient_publishMessage(client, topic, &pubmsg, &token);
+        int rc = MQTTClient_publishMessage(mqttClient, topic, &pubmsg, &token);
         if (rc == MQTTCLIENT_SUCCESS) {
-            MQTTClient_waitForCompletion(client, token, MQTT_TIMEOUT);
+            MQTTClient_waitForCompletion(mqttClient, token, MQTT_TIMEOUT);
             printf("MQTT report published successfully.\n"); //sads
         } else {
             printf("MQTT publish failed: %d\n", rc);
         }
-
-        MQTTClient_disconnect(client, MQTT_TIMEOUT);
-        MQTTClient_destroy(&client);
-        }
-
-    
+    }
 }
 
 /* === Config Loader === */
@@ -253,6 +261,7 @@ int main(int argc, char** argv)
 
     const char* configFile = argv[1];
     HostConfig hostConfig;
+    initMqttClient();
 
     if (!loadHostConfigs(configFile, &hostConfig)) {
         printf("Failed to load host configuration.\n");
@@ -385,15 +394,37 @@ int main(int argc, char** argv)
             if (state != IED_STATE_CONNECTED) {
                 printf("Session to %s disconnected.\n", sessions[i].ip);
                 sessions[i].connected = false;
+
             } else {
                 printf("Session to %s is connected.\n", sessions[i].ip);
                 printf("Session %d: Dataset: %s, RCB: %s\n", i + 1,
                     sessions[i].dataset,
                     sessions[i].rcbName);
+                MQTTClient_message pubmsg = MQTTClient_message_initializer;
+                char tesSend[100] = "test";
+                pubmsg.payload = tesSend;
+                pubmsg.payloadlen = (int)strlen(tesSend);
+                pubmsg.qos = MQTT_QOS;
+                pubmsg.retained = 0;
+                char topic[150];
+                // printf("MachineCode: %s\n",);
+                // snprintf(topic, sizeof(topic), "DMS/%s/IEC61850/Reports/%s", machine_code_, entryNameBuffer);
+
+
+
+                MQTTClient_deliveryToken token;
+                int rc = MQTTClient_publishMessage(mqttClient, "topic", &pubmsg, &token);
+                if (rc == MQTTCLIENT_SUCCESS) {
+                    MQTTClient_waitForCompletion(mqttClient, token, MQTT_TIMEOUT);
+                    printf("MQTT report published successfully.\n"); //sads
+                } else {
+                    printf("MQTT publish failed: %d\n", rc);
+                    initMqttClient();
+                }
             }
         }
 
-        Thread_sleep(1000);  // 1 second
+        Thread_sleep(5000);  // 1 second
     }
 
 
