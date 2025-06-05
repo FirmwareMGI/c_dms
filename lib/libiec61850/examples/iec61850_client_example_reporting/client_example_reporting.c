@@ -511,7 +511,7 @@ int is_valid_json(const char *payload)
 // subscribe callback print
 void message_arrived_callback(void *context, char *topicName, int topicLen, MQTTClient_message *message)
 {
-    printf("Message arrived on topic\n");
+    printf("Message arrived on topic :%s\n", topicName);
     // if (/*strstr(topicName, "control") == NULL &&*/ strstr(topicName, "request") == NULL)
     // {
     //     printf("Wrong Topic: %s\n", topicName);
@@ -891,10 +891,11 @@ void processMessages(IedConnection iecConn, MQTTClient mqttClient)
     // Message msg;
     // while (dequeueMessage(&msg))
     // {
-    printf("Processing message from topic\n");
+    // printf("Processing message from topic\n");
     char respJsonOutput[512];
     if (TopicArrived)
     {
+        printf("TopicArrived: TRUE\n");
         // log_info("MQTT: Topic received ->  %s", msg.topic);
         // log_info("MQTT: Message received ->%s", msg.payload);
         // printf("DEQUEUE MESSAGE\n");
@@ -957,6 +958,7 @@ void processMessages(IedConnection iecConn, MQTTClient mqttClient)
         }
 
         TopicArrived = false;
+        printf("TopicArrived: FALSE\n");
     }
 }
 
@@ -1433,9 +1435,6 @@ int main(int argc, char** argv)
                hostConfig.reports[j].dataset,
                hostConfig.reports[j].rcb);
 
-
-        
-
         if (error != IED_ERROR_OK) {
             printf("Connection failed: %s\n", hostConfig.ip);
             IedConnection_destroy(con);
@@ -1492,11 +1491,11 @@ int main(int argc, char** argv)
     //     }
     //     Thread_sleep(1000);
     // }
-    
+    TopicArrived = false;
     while (running) {
-        processMessages(con, mqttClient);   
+          
         for (int i = 0; i < sessionCount; i++) {
-            
+            processMessages(sessions[i].con, mqttClient); 
             if (!sessions[i].connected) {
                 printf("Reconnecting to %s...\n", sessions[i].ip);
                 
@@ -1510,9 +1509,8 @@ int main(int argc, char** argv)
                     printf("Failed to connect to %s:%d (error: %d)\n", sessions[i].ip, sessions[i].tcpPort, error);
                     IedConnection_destroy(con);
                     sessions[i].connected = false;
-                    continue;
+                    break;
                 }
-                
                 sessions[i].error = error;
 
                 ClientReportControlBlock_setResv(sessions[i].rcb, true);
