@@ -3,7 +3,7 @@
   "localIP": "192.168.2.4",
   "port": "102",
   "machineCode": "0201160044",
-  "idDevice": "12",
+  "idDevice": "13",
   "control": [
     {
       "id": 0,
@@ -378,13 +378,13 @@
       "id": 2,
       "dataSetReference": "BCUCPLCONTROL1/LLN0$LLN0BRptStDs",
       "rcb": "BCUCPLCONTROL1/LLN0$BR$brcbST02",
-      "isEnable": true
+      "isEnable": false
     },
     {
       "id": 3,
       "dataSetReference": "BCUCPLCONTROL1/LLN0$LLN0BRptStDs",
       "rcb": "BCUCPLCONTROL1/LLN0$BR$brcbST03",
-      "isEnable": false
+      "isEnable": true
     },
     {
       "id": 4,
