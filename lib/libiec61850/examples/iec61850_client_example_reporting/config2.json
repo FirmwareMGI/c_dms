@@ -1,6 +1,6 @@
 {
   "iedName": "BCUCPL",
-  "localIP": "192.168.2.12",
+  "localIP": "192.168.2.15",
   "port": "102",
   "machineCode": "0201160044",
   "idDevice": "11",
@@ -10,6 +10,7 @@
       "ctlModel": "direct-with-enhanced-security",
       "enabled": false
     },
+
     {
       "object": "BCUCPLCONTROL1/CILO1.Mod",
       "ctlModel": "status-only",
@@ -27,6 +28,11 @@
     },
     {
       "object": "BCUCPLCONTROL1/CSWI1.Pos",
+      "ctlModel": "sbo-with-enhanced-security",
+      "enabled": true
+    },
+    {
+      "object": "BCUCPLCONTOL1/CSWI1.Pos",
       "ctlModel": "sbo-with-enhanced-security",
       "enabled": true
     },

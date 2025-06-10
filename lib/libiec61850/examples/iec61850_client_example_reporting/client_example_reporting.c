@@ -18,6 +18,7 @@
 #include <signal.h>
 #include <inttypes.h>
 
+
 #define MAX_REPORTS 5
 #define MAX_HOSTS 10
 #define MAX_SESSIONS 100
@@ -178,7 +179,7 @@ int initMqttClient()
 
     sprintf(mqtt_topic_control_request, "+/%d/control/request", 1);
     sprintf(mqtt_topic_control_response, "DMS/%d/control/response", 1);
-    rc = MQTTClient_subscribe(mqttClient, mqtt_topic_control_request, MQTT_QOS);
+    rc = MQTTClient_subscribe(mqttClient, mqtt_topic_control_request, 1);
     if (rc != MQTTCLIENT_SUCCESS)
     {
         fprintf(stderr, "MQTT: Failed to subscribe to topic %s, return code %d\n", mqtt_topic_control_request, rc);
@@ -186,6 +187,7 @@ int initMqttClient()
     else
     {
         printf("MQTT: Subscribed to topic %s\n", mqtt_topic_control_request);
+        TopicArrived = false;
     }
     return MQTTCLIENT_SUCCESS;
 }
@@ -412,6 +414,7 @@ const char *current_time_str()
     static char buffer[32]; // Static so it's valid after return
     time_t now = time(NULL);
     struct tm *tm_info = localtime(&now);
+    printf("tm_info: %p\n", tm_info);
 
     strftime(buffer, sizeof(buffer), "%Y-%m-%d %H:%M:%S", tm_info);
     return buffer;
@@ -532,8 +535,8 @@ void message_arrived_callback(void *context, char *topicName, int topicLen, MQTT
     else
         printf("Invalid JSON\n");
 
-    MQTTClient_freeMessage(&message);
-    MQTTClient_free(topicName);
+    // MQTTClient_freeMessage(&message);
+    // MQTTClient_free(topicName);
 }
 
 int processParseJsonReceive(char *payload, ReceiveControl *out)
@@ -795,9 +798,15 @@ void processIEC61850Control(IedConnection iecConn, const char *ctlModel, Receive
         ResponseControl RespCancel;
         IEC61850_control_cancel_ex(iecConn, rc.object, &RespCancel);
         memcpy(iecRc, &RespCancel, sizeof(ResponseControl));
+
     }
     else
     {
+        IedConnectionState state = IedConnection_getState(iecConn);
+         if (state != IED_STATE_CONNECTED) {
+                printf("Disconnected from server. Will attempt to reconnect.\n");
+                // sessions[i].connected = false;
+            }
         printf("ReceiveControl: %s\n", rc.object);
         if (strcmp(ctlModel, "direct-with-normal-security") == 0)
         {
@@ -838,15 +847,24 @@ int MQTT_publish(MQTTClient mqttClient, const char *topic, const char *msg)
     pubmsg.qos = MQTT_QOS;
     pubmsg.retained = 0;
 
-    MQTTClient_deliveryToken token;
-    int rc = MQTTClient_publishMessage(mqttClient, topic, &pubmsg, &token);
-    if (rc != MQTTCLIENT_SUCCESS)
-    {
-        // log_error("MQTT: %s", "Failed to publish message. Error: %d\n", rc);
-        return rc;
-    }
+    // MQTTClient_deliveryToken token;
+    // int rc = MQTTClient_publishMessage(mqttClient, topic, &pubmsg, &token);
+    // if (rc != MQTTCLIENT_SUCCESS)
+    // {
+    //     // log_error("MQTT: %s", "Failed to publish message. Error: %d\n", rc);
+    //     return rc;
+    // }
 
-    MQTTClient_waitForCompletion(mqttClient, token, MQTT_TIMEOUT);
+    // MQTTClient_waitForCompletion(mqttClient, token, MQTT_TIMEOUT);
+    MQTTClient_deliveryToken token;
+        int rc = MQTTClient_publishMessage(mqttClient, topic, &pubmsg, &token);
+        if (rc == MQTTCLIENT_SUCCESS) {
+            MQTTClient_waitForCompletion(mqttClient, token, MQTT_TIMEOUT);
+            printf("MQTT report published successfully Control.\n"); //sads
+        } else {
+            printf("MQTT publish failed: %d\n", rc);
+        }
+
     return 0;
 }
 
@@ -904,22 +922,22 @@ void processMessages(IedConnection iecConn, MQTTClient mqttClient)
         int ret = parseJsonToReceiveControl(mqttSubData.payload, &revCtrlObj);
         if (ret == 0)
         {
-            printf("Parsed ReceiveControl:\n");
-            printf(" object: %s\n", revCtrlObj.object);
-            printf(" valueNow: %s\n", revCtrlObj.valueNow);
-            printf(" lastValue: %s\n", revCtrlObj.lastValue);
-            printf(" typeData: %s\n", revCtrlObj.typeData);
-            printf(" ctlCommand: %s\n", revCtrlObj.ctlCommand);
-            printf(" interlocking: %s\n", revCtrlObj.interlocking ? "true" : "false");
-            printf(" synchrocheck: %s\n", revCtrlObj.synchrocheck ? "true" : "false");
-            printf(" testmode: %s\n", revCtrlObj.testmode ? "true" : "false");
-            printf(" timestamp: %" PRId64 "\n", revCtrlObj.timestamp);
+            // printf("Parsed ReceiveControl:\n");
+            // printf(" object: %s\n", revCtrlObj.object);
+            // printf(" valueNow: %s\n", revCtrlObj.valueNow);
+            // printf(" lastValue: %s\n", revCtrlObj.lastValue);
+            // printf(" typeData: %s\n", revCtrlObj.typeData);
+            // printf(" ctlCommand: %s\n", revCtrlObj.ctlCommand);
+            // printf(" interlocking: %s\n", revCtrlObj.interlocking ? "true" : "false");
+            // printf(" synchrocheck: %s\n", revCtrlObj.synchrocheck ? "true" : "false");
+            // printf(" testmode: %s\n", revCtrlObj.testmode ? "true" : "false");
+            // printf(" timestamp: %" PRId64 "\n", revCtrlObj.timestamp);
 
             ResponseControl RespCtl;
             int checkObject = 1;
             for (int i = 0; i < enabledCount; i++)
             {
-                printf("Checking enabled control: %s\n", enabledControls[i].object);
+                // printf("Checking enabled control: %s\n", enabledControls[i].object);
                 if (strcmp(revCtrlObj.object, enabledControls[i].object) == 0)
                 {
                     processIEC61850Control(iecConn, enabledControls[i].ctlModel, revCtrlObj, &RespCtl);
@@ -950,7 +968,30 @@ void processMessages(IedConnection iecConn, MQTTClient mqttClient)
             {
                 printf("Failed to generate JSON.\n");
             }
-            MQTT_publish(mqttClient, mqtt_topic_control_response, respJsonOutput);
+            // MQTT_publish(mqttClient, mqtt_topic_control_response, respJsonOutput);
+            // printf("Publishing response to MQTT topic: %s\n", mqtt_topic_control_response);
+            MQTTClient_message pubmsg = MQTTClient_message_initializer;
+            char tesSend[100] = "test";
+            pubmsg.payload = respJsonOutput;
+            pubmsg.payloadlen = (int)strlen(respJsonOutput);
+            pubmsg.qos = MQTT_QOS;
+            pubmsg.retained = 0;
+            char topic[150];
+            // printf("MachineCode: %s\n",);
+            // snprintf(topic, sizeof(topic), "DMS/%s/IEC61850/Reports/%s", machine_code_, entryNameBuffer);
+
+
+
+            MQTTClient_deliveryToken token;
+            int rc = MQTTClient_publishMessage(mqttClient, "topic2222", &pubmsg, &token);
+            if (rc == MQTTCLIENT_SUCCESS) {
+                MQTTClient_waitForCompletion(mqttClient, token, MQTT_TIMEOUT);
+                // printf("MQTT report published successfully.\n"); //sads
+                printf("MQTT publish successful Control: %s\n", respJsonOutput);
+            } else {
+                printf("MQTT publish failed Control: %d\n", rc);
+                // initMqttClient();
+            }
         }
         else
         {
@@ -1298,6 +1339,8 @@ int IEC61850_control_sbo_security_ex(IedConnection con, char *control_obj, Recei
         else
         {
             printf("failed to select %s!\n", select_security_ctl_obj);
+            strcpy(resp->status, "failed");
+            strcpy(resp->errorString, "value not changed");
         }
 
         MmsValue_delete(ctlVal);
@@ -1312,6 +1355,7 @@ int IEC61850_control_sbo_security_ex(IedConnection con, char *control_obj, Recei
         strcpy(resp->status, "failed");
         strcpy(resp->errorString, "item not found");
     }
+    strcpy(resp->timestamp, current_time_str());
 }
 
 int IEC61850_control_direct_security_exp_ex(IedConnection con, char *control_obj, ReceiveControl rc, ResponseControl *resp)
@@ -1575,13 +1619,13 @@ int main(int argc, char** argv)
                     MQTTClient_waitForCompletion(mqttClient, token, MQTT_TIMEOUT);
                     printf("MQTT report published successfully.\n"); //sads
                 } else {
-                    printf("MQTT publish failed: %d\n", rc);
+                    printf("MQTT publish failed Udin: %d\n", rc);
                     initMqttClient();
                 }
             }
         }
 
-        Thread_sleep(5000);  // 1 second
+        Thread_sleep(3000);  // 1 second
     }
 
 
