@@ -17,6 +17,8 @@
 #include <time.h>
 #include <signal.h>
 #include <inttypes.h>
+#include <sys/time.h>  // For gettimeofday
+#include <unistd.h>    // For usleep
 
 
 #define MAX_REPORTS 5
@@ -36,10 +38,14 @@ int finished = 0;
 char mqtt_topic_control_request[20];
 char mqtt_topic_control_response[20];
 
+
 bool TopicArrived = false;
 const int mqttpayloadSize = 200;
 char mqttpayload[200] = {'\0'};
 char mqtttopic[30];
+
+unsigned long lastTime = 0;
+const unsigned long interval = 3000;  // 3 seconds
 
 // MQTT
 
@@ -133,6 +139,13 @@ void sigint_handler(int signalId)
 {
     running = 0;
 }
+
+unsigned long millis() {
+    struct timeval tv;
+    gettimeofday(&tv, NULL);
+    return (unsigned long)(tv.tv_sec) * 1000 + (unsigned long)(tv.tv_usec) / 1000;
+}
+
 
 char mqtt_client_id[64];
 
@@ -1537,95 +1550,96 @@ int main(int argc, char** argv)
     // }
     TopicArrived = false;
     while (running) {
-          
-        for (int i = 0; i < sessionCount; i++) {
-            processMessages(sessions[i].con, mqttClient); 
-            if (!sessions[i].connected) {
-                printf("Reconnecting to %s...\n", sessions[i].ip);
+        unsigned long currentTime = millis();
+        // printf("Current time: %lu\n", currentTime);
+
+        if (currentTime - lastTime >= interval) {
+            lastTime = currentTime;
+            // printf("sessioncount: %d\n", sessionCount);
+
+            for (int i = 0; i < sessionCount; i++) {
+                processMessages(sessions[i].con, mqttClient); 
+                printf("Processing messages...\n");
+
+
+                if (!sessions[i].connected) {
+                    printf("Reconnecting to %s...\n", sessions[i].ip);
                 
-                IedClientError error;
-                IedConnection con = IedConnection_create();
-                sessions[i].con = con;
+                    IedClientError error;
+                    IedConnection con = IedConnection_create();
+                    sessions[i].con = con;
 
-                IedConnection_connect(con, &error, sessions[i].ip, sessions[i].tcpPort);
+                    IedConnection_connect(con, &error, sessions[i].ip, sessions[i].tcpPort);
 
-                if (error != IED_ERROR_OK) {
-                    printf("Failed to connect to %s:%d (error: %d)\n", sessions[i].ip, sessions[i].tcpPort, error);
-                    IedConnection_destroy(con);
-                    sessions[i].connected = false;
-                    break;
-                }
-                sessions[i].error = error;
+                    if (error != IED_ERROR_OK) {
+                        printf("Failed to connect to %s:%d (error: %d)\n", sessions[i].ip, sessions[i].tcpPort, error);
+                        IedConnection_destroy(con);
+                        sessions[i].connected = false;
+                        break;
+                    }
+                    sessions[i].error = error;
 
-                ClientReportControlBlock_setResv(sessions[i].rcb, true);
-                ClientReportControlBlock_setTrgOps(sessions[i].rcb, TRG_OPT_DATA_CHANGED | TRG_OPT_QUALITY_CHANGED | TRG_OPT_GI);
-                ClientReportControlBlock_setDataSetReference(sessions[i].rcb, sessions[i].dataset);
-                ClientReportControlBlock_setRptEna(sessions[i].rcb, true);
-                ClientReportControlBlock_setGI(sessions[i].rcb, true);
+                    ClientReportControlBlock_setResv(sessions[i].rcb, true);
+                    ClientReportControlBlock_setTrgOps(sessions[i].rcb, TRG_OPT_DATA_CHANGED | TRG_OPT_QUALITY_CHANGED | TRG_OPT_GI);
+                    ClientReportControlBlock_setDataSetReference(sessions[i].rcb, sessions[i].dataset);
+                    ClientReportControlBlock_setRptEna(sessions[i].rcb, true);
+                    ClientReportControlBlock_setGI(sessions[i].rcb, true);
 
-                IedConnection_installReportHandler(
-                    sessions[i].con,
-                    sessions[i].dataset,
-                    ClientReportControlBlock_getRptId(sessions[i].rcb),
-                    reportCallbackFunction,
-                    (void*) sessions[i].dataSetDirectory
-                );
+                    IedConnection_installReportHandler(
+                        sessions[i].con,
+                        sessions[i].dataset,
+                        ClientReportControlBlock_getRptId(sessions[i].rcb),
+                        reportCallbackFunction,
+                        (void*) sessions[i].dataSetDirectory
+                    );
 
-                IedConnection_setRCBValues(
-                    sessions[i].con,
-                    &error,
-                    sessions[i].rcb,
-                    RCB_ELEMENT_RPT_ENA | RCB_ELEMENT_GI,
-                    true
-                );
+                    IedConnection_setRCBValues(
+                        sessions[i].con,
+                        &error,
+                        sessions[i].rcb,
+                        RCB_ELEMENT_RPT_ENA | RCB_ELEMENT_GI,
+                        true
+                    );
 
-                if (error != IED_ERROR_OK) {
-                    printf("Failed to configure RCB on %s (error: %d)\n", sessions[i].ip, error);
-                    IedConnection_destroy(con);
-                    sessions[i].connected = false;
+                    if (error != IED_ERROR_OK) {
+                        printf("Failed to configure RCB on %s (error: %d)\n", sessions[i].ip, error);
+                        IedConnection_destroy(con);
+                        sessions[i].connected = false;
+                        continue;
+                    }
+
+                    sessions[i].connected = true;
+                    printf("Successfully reconnected to %s\n", sessions[i].ip);
                     continue;
                 }
-
-                sessions[i].connected = true;
-                printf("Successfully reconnected to %s\n", sessions[i].ip);
-                continue;
-            }
-
-            IedConnectionState state = IedConnection_getState(sessions[i].con);
-            if (state != IED_STATE_CONNECTED) {
-                printf("Session to %s disconnected.\n", sessions[i].ip);
-                sessions[i].connected = false;
-
-            } else {
-                // printf("Session to %s is connected.\n", sessions[i].ip);
-                // printf("Session %d: Dataset: %s, RCB: %s\n", i + 1,
-                    // sessions[i].dataset,
-                    // sessions[i].rcbName);
-                MQTTClient_message pubmsg = MQTTClient_message_initializer;
-                char tesSend[100] = "test";
-                pubmsg.payload = tesSend;
-                pubmsg.payloadlen = (int)strlen(tesSend);
-                pubmsg.qos = MQTT_QOS;
-                pubmsg.retained = 0;
-                char topic[150];
-                // printf("MachineCode: %s\n",);
-                // snprintf(topic, sizeof(topic), "DMS/%s/IEC61850/Reports/%s", machine_code_, entryNameBuffer);
-
-
-
-                MQTTClient_deliveryToken token;
-                int rc = MQTTClient_publishMessage(mqttClient, "topic", &pubmsg, &token);
-                if (rc == MQTTCLIENT_SUCCESS) {
-                    MQTTClient_waitForCompletion(mqttClient, token, MQTT_TIMEOUT);
-                    printf("MQTT report published successfully.\n"); //sads
+                IedConnectionState state = IedConnection_getState(sessions[i].con);
+                if (state != IED_STATE_CONNECTED) {
+                    sessions[i].connected = false;
+                    printf("Session to %s disconnected.\n", sessions[i].ip);
                 } else {
-                    printf("MQTT publish failed Udin: %d\n", rc);
-                    initMqttClient();
+                    // MQTT publishing logic
+                    MQTTClient_message pubmsg = MQTTClient_message_initializer;
+                    char tesSend[100] = "test";
+                    pubmsg.payload = tesSend;
+                    pubmsg.payloadlen = (int)strlen(tesSend);
+                    pubmsg.qos = MQTT_QOS;
+                    pubmsg.retained = 0;
+
+                    MQTTClient_deliveryToken token;
+                    int rc = MQTTClient_publishMessage(mqttClient, "topic", &pubmsg, &token);
+                    if (rc == MQTTCLIENT_SUCCESS) {
+                        MQTTClient_waitForCompletion(mqttClient, token, MQTT_TIMEOUT);
+                        printf("MQTT report published successfully.\n");
+                    } else {
+                        printf("MQTT publish failed: %d\n", rc);
+                        initMqttClient();
+                    }
                 }
             }
         }
 
-        Thread_sleep(3000);  // 1 second
+        // Prevent CPU overload
+        usleep(100000); // sleep 1ms
     }
 
 
