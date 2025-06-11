@@ -20,11 +20,11 @@ try:
     while True:
         # Build message
         message = {
-            "object": "TEMPLATECON/RBGGIO1.SPCSO01",
+            "object": "BCUCPLCONTROL1/CSWI1.Pos",
             "valueNow": value_now,
             "lastValue": not value_now,
             "typeData": "boolean",
-            "ctlCommand": "direct",
+            "ctlCommand": "sbo",
             "interlocking": False,
             "synchrocheck": False,
             "testmode": False,
@@ -47,7 +47,7 @@ try:
         value_now = not value_now
 
         # Wait 5 seconds
-        time.sleep(2.5)
+        time.sleep(5)
 
 except KeyboardInterrupt:
     print("⛔ Stopped by user")

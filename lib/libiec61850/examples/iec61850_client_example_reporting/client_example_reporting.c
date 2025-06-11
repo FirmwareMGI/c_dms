@@ -25,6 +25,8 @@
 #define MAX_HOSTS 10
 #define MAX_SESSIONS 100
 
+#define MAX_REPORTS_PER_DEVICE 5
+
 #define MQTT_ADDRESS     "tcp://192.168.2.33:1883"
 // #define MQTT_CLIENTID    "IEC61850_ReportClient"
 #define MQTT_QOS         2
@@ -56,6 +58,12 @@ int master_id_device;
 
 // CONTROL
 #define MAX_ENABLED_CONTROLS 10
+#define MAX_DATASETS 10
+
+#define MAX_STRING_LEN 256
+#define MAX_LIST_DATA 200  // Adjust based on expected max FCDA items
+
+
 typedef struct
 {
     char object[128];
@@ -94,6 +102,8 @@ typedef struct IecResponseControl
     int timestamp;
 } IecResponseControl;
 
+
+
 EnabledControl enabledControls[MAX_ENABLED_CONTROLS];
 int enabledCount = 0;
 // CONTROL
@@ -104,10 +114,30 @@ static int running = 1;
 char machine_code_[64] = "";
 char id_device_[64] = ""; // Default value, can be overridden by config
 
+
+typedef struct {
+    int id;
+    char fcda[128];
+    char alias[128];
+} FcdaEntry;
+
 typedef struct {
     char dataset[128];
     char rcb[128];
+    FcdaEntry fcdaList[MAX_LIST_DATA];
+    int fcdaCount;
 } ReportConfig;
+
+typedef struct {
+    char dataSetReference[MAX_STRING_LEN];
+    FcdaEntry listData[MAX_LIST_DATA];
+    int listDataCount;
+} DataSetInfo;
+
+// Global array to store all parsed datasets
+DataSetInfo globalDataSets[MAX_DATASETS];
+int globalDataSetCount = 0;
+
 
 typedef struct {
     char ip[64];
@@ -120,14 +150,16 @@ typedef struct {
 
 typedef struct {
     IedConnection con;
-    ClientReportControlBlock rcb;
+    ClientReportControlBlock rcbList[MAX_REPORTS_PER_DEVICE]; // You define the max
+    LinkedList dataSetDirectoryList[MAX_REPORTS_PER_DEVICE];
+    ClientDataSet clientDataSetList[MAX_REPORTS_PER_DEVICE];
+    const char* datasetList[MAX_REPORTS_PER_DEVICE];
+    const char* rcbNameList[MAX_REPORTS_PER_DEVICE];
+    int reportCount;
+
     IedClientError error;
-    ClientDataSet clientDataSet;
-    LinkedList dataSetDirectory;
-    char* ip;
+    const char* ip;
     int tcpPort;
-    const char* dataset;
-    const char* rcbName;
     bool connected;
 } ReportSession;
 
@@ -190,6 +222,7 @@ int initMqttClient()
         return rc;
     }
 
+    //TODO: change the topic to dynamic based on id_device and machine code
     sprintf(mqtt_topic_control_request, "+/%d/control/request", 1);
     sprintf(mqtt_topic_control_response, "DMS/%d/control/response", 1);
     rc = MQTTClient_subscribe(mqttClient, mqtt_topic_control_request, 1);
@@ -204,6 +237,21 @@ int initMqttClient()
     }
     return MQTTCLIENT_SUCCESS;
 }
+
+const char* getAliasFromGlobalDataset(const char* fcdaName) {
+    for (int i = 0; i < globalDataSetCount; i++) {
+        DataSetInfo* dataset = &globalDataSets[i];
+
+        for (int j = 0; j < dataset->listDataCount; j++) {
+            if (strcmp(dataset->listData[j].fcda, fcdaName) == 0) {
+                return dataset->listData[j].alias;
+            }
+        }
+    }
+
+    return NULL; // Alias not found
+}
+
 
 
 /* === MQTT Report Callback === */
@@ -243,6 +291,13 @@ void reportCallbackFunction(void* parameter, ClientReport report)
         snprintf(entryNameBuffer, sizeof(entryNameBuffer), "%s", entryName);
         char firstValue[100] = "unknown";
 
+        const char* alias = getAliasFromGlobalDataset(entryNameBuffer);
+        if (alias) {
+            printf("Alias for %s is %s\n", entryNameBuffer, alias);
+        } else {
+            printf("Alias for %s not found.\n", entryNameBuffer);
+        }
+
         // Find the opening brace
         char* start = strchr(valBuffer, '{');
         if (start) {
@@ -265,7 +320,7 @@ void reportCallbackFunction(void* parameter, ClientReport report)
 
         char line[600];
         snprintf(line, sizeof(line),
-        "{value: %s, \"timestamp\": \"%s\" }", valBuffer, timestampBuf);
+        "{value: %s, alias: %s, \"timestamp\": \"%s\" }", firstValue, alias,timestampBuf);
 
         // printf("entry: %s, reason: %d, value: %s\n", entryName, reason, valBuffer);
         // printf("Formatted timestamp: %s\n", timestampBuf);
@@ -327,19 +382,36 @@ int loadHostConfigs(const char* filename, HostConfig* host)
 
     strncpy(host->ip, ip->valuestring, sizeof(host->ip));
     strncpy(host->port, port->valuestring, sizeof(host->port));
-    if (machine_code) {
-        strncpy(host->machineCode, machine_code->valuestring, sizeof(host->machineCode));
-    } else {
-        host->machineCode[0] = '\0'; // Default to empty if not provided
-    }
-    if (id_device) {
-        strncpy(host->id_device, id_device->valuestring, sizeof(host->id_device));
-    } else {
-        host->id_device[0] = '\0'; // Default to empty if not provided
-    }
+    strncpy(host->machineCode, machine_code ? machine_code->valuestring : "", sizeof(host->machineCode));
+    strncpy(host->id_device, id_device ? id_device->valuestring : "", sizeof(host->id_device));
 
     cJSON* reportList = cJSON_GetObjectItem(root, "reports");
     if (!reportList || !cJSON_IsArray(reportList)) {
+        cJSON_Delete(root);
+        return 0;
+    }
+
+    // Load CConfig3.json
+    // TODO : Dynamic naming
+    FILE* cfg = fopen("CConfig3.json", "r");
+    if (!cfg) {
+        perror("CConfig3.json open failed");
+        cJSON_Delete(root);
+        return 0;
+    }
+
+    fseek(cfg, 0, SEEK_END);
+    long cfg_len = ftell(cfg);
+    rewind(cfg);
+
+    char* cfg_data = malloc(cfg_len + 1);
+    fread(cfg_data, 1, cfg_len, cfg);
+    cfg_data[cfg_len] = '\0';
+    fclose(cfg);
+
+    cJSON* configRoot = cJSON_Parse(cfg_data);
+    free(cfg_data);
+    if (!configRoot || !cJSON_IsArray(configRoot)) {
         cJSON_Delete(root);
         return 0;
     }
@@ -356,28 +428,61 @@ int loadHostConfigs(const char* filename, HostConfig* host)
         if (dsRef && rcb && cJSON_IsTrue(isEnabled)) {
             strncpy(host->reports[reportIndex].dataset, dsRef->valuestring, sizeof(host->reports[reportIndex].dataset));
             strncpy(host->reports[reportIndex].rcb, rcb->valuestring, sizeof(host->reports[reportIndex].rcb));
+
+            // Match with CConfig3.json
+            cJSON* configEntry = NULL;
+            cJSON_ArrayForEach(configEntry, configRoot) {
+                cJSON* ref = cJSON_GetObjectItem(configEntry, "dataSetReference");
+                if (ref && strcmp(ref->valuestring, dsRef->valuestring) == 0) {
+                    cJSON* listData = cJSON_GetObjectItem(configEntry, "listData");
+                    if (listData && cJSON_IsArray(listData)) {
+                        strncpy(globalDataSets[globalDataSetCount].dataSetReference, ref->valuestring, sizeof(globalDataSets[globalDataSetCount].dataSetReference));
+
+                        int globalFcdaIdx = 0;
+                        cJSON* fcdaEntry = NULL;
+                        cJSON_ArrayForEach(fcdaEntry, listData) {
+                            if (globalFcdaIdx >= MAX_LIST_DATA) break;
+
+                            cJSON* id = cJSON_GetObjectItem(fcdaEntry, "id");
+                            cJSON* fcda = cJSON_GetObjectItem(fcdaEntry, "fcda");
+                            cJSON* alias = cJSON_GetObjectItem(fcdaEntry, "alias");
+
+                            if (id && fcda && alias) {
+                                globalDataSets[globalDataSetCount].listData[globalFcdaIdx].id = id->valueint;
+                                strncpy(globalDataSets[globalDataSetCount].listData[globalFcdaIdx].fcda, fcda->valuestring, sizeof(globalDataSets[globalDataSetCount].listData[globalFcdaIdx].fcda));
+                                strncpy(globalDataSets[globalDataSetCount].listData[globalFcdaIdx].alias, alias->valuestring, sizeof(globalDataSets[globalDataSetCount].listData[globalFcdaIdx].alias));
+                                globalFcdaIdx++;
+                            }
+                        }
+                        globalDataSets[globalDataSetCount].listDataCount = globalFcdaIdx;
+                        globalDataSetCount++;
+                    }
+                    break; // Match found
+                }
+            }
+
+            printf("Loaded report %d: DataSet=%s, RCB=%s, FCDA count: %d\n",
+                   reportIndex, host->reports[reportIndex].dataset,
+                   host->reports[reportIndex].rcb,
+                   host->reports[reportIndex].fcdaCount);
+
             reportIndex++;
         }
     }
 
     host->reportCount = reportIndex;
-    // Initialize enabled controls   
 
-    cJSON *controlArray = cJSON_GetObjectItem(root, "control");
-    if (cJSON_IsArray(controlArray))
-    {
+    // Process enabled controls
+    cJSON* controlArray = cJSON_GetObjectItem(root, "control");
+    if (cJSON_IsArray(controlArray)) {
         int size = cJSON_GetArraySize(controlArray);
-        for (int i = 0; i < size; i++)
-        {
-            cJSON *item = cJSON_GetArrayItem(controlArray, i);
-            cJSON *enabled = cJSON_GetObjectItem(item, "enabled");
-            if (cJSON_IsBool(enabled) && cJSON_IsTrue(enabled))
-            {
-                cJSON *object = cJSON_GetObjectItem(item, "object");
-                cJSON *ctlModel = cJSON_GetObjectItem(item, "ctlModel");
-
-                if (cJSON_IsString(object) && cJSON_IsString(ctlModel))
-                {
+        for (int i = 0; i < size; i++) {
+            cJSON* item = cJSON_GetArrayItem(controlArray, i);
+            cJSON* enabled = cJSON_GetObjectItem(item, "enabled");
+            if (cJSON_IsTrue(enabled)) {
+                cJSON* object = cJSON_GetObjectItem(item, "object");
+                cJSON* ctlModel = cJSON_GetObjectItem(item, "ctlModel");
+                if (object && ctlModel) {
                     strncpy(enabledControls[enabledCount].object, object->valuestring, sizeof(enabledControls[enabledCount].object) - 1);
                     strncpy(enabledControls[enabledCount].ctlModel, ctlModel->valuestring, sizeof(enabledControls[enabledCount].ctlModel) - 1);
                     enabledCount++;
@@ -387,14 +492,15 @@ int loadHostConfigs(const char* filename, HostConfig* host)
     }
 
     printf("Found %d enabled control items:\n", enabledCount);
-    for (int i = 0; i < enabledCount; i++)
-    {
+    for (int i = 0; i < enabledCount; i++) {
         printf(" - Object: %s | ctlModel: %s\n", enabledControls[i].object, enabledControls[i].ctlModel);
     }
 
+    cJSON_Delete(configRoot);
     cJSON_Delete(root);
     return 1;
 }
+
 
 
 ////////////////////// CONTROL ??////////////////////////
@@ -427,7 +533,7 @@ const char *current_time_str()
     static char buffer[32]; // Static so it's valid after return
     time_t now = time(NULL);
     struct tm *tm_info = localtime(&now);
-    printf("tm_info: %p\n", tm_info);
+    // printf("tm_info: %p\n", tm_info);
 
     strftime(buffer, sizeof(buffer), "%Y-%m-%d %H:%M:%S", tm_info);
     return buffer;
@@ -1320,7 +1426,8 @@ int IEC61850_control_sbo_security_ex(IedConnection con, char *control_obj, Recei
     //  ***********************************************/
     const char *select_security_ctl_obj = control_obj;
     ControlObjectClient control = ControlObjectClient_create(select_security_ctl_obj, con);
-
+    
+    strcpy(resp->valueNow, rc.valueNow);
     strcpy(resp->ctlCommand, "sbo");
     strcpy(resp->object, control_obj);
     strcpy(resp->lastValue, "none");
@@ -1485,26 +1592,33 @@ int main(int argc, char** argv)
     IedClientError error;
     IedConnection con = IedConnection_create();
     IedConnection_connect(con, &error, hostConfig.ip, 102);
-    
-    for (int j = 0; j < hostConfig.reportCount; j++) {
-        printf("Connecting to %s:%s - Dataset: %s, RCB: %s\n",
-               hostConfig.ip, hostConfig.port,
-               hostConfig.reports[j].dataset,
-               hostConfig.reports[j].rcb);
 
-        if (error != IED_ERROR_OK) {
-            printf("Connection failed: %s\n", hostConfig.ip);
-            IedConnection_destroy(con);
-            continue;
-        }
+    if (error != IED_ERROR_OK) {
+        printf("Connection failed to %s:%d (error %d)\n", hostConfig.ip, 102, error);
+        IedConnection_destroy(con);
+        return 0;
+    }
+
+    ReportSession session = {
+        .con = con,
+        .error = error,
+        .ip = hostConfig.ip,
+        .tcpPort = 102,
+        .connected = true,
+        .reportCount = hostConfig.reportCount
+    };
+
+    for (int j = 0; j < hostConfig.reportCount; j++) {
+        printf("Configuring report #%d - Dataset: %s, RCB: %s\n", j,
+            hostConfig.reports[j].dataset,
+            hostConfig.reports[j].rcb);
 
         LinkedList dataSetDirectory = IedConnection_getDataSetDirectory(con, &error, hostConfig.reports[j].dataset, NULL);
         ClientDataSet dataSet = IedConnection_readDataSetValues(con, &error, hostConfig.reports[j].dataset, NULL);
         ClientReportControlBlock rcb = IedConnection_getRCBValues(con, &error, hostConfig.reports[j].rcb, NULL);
 
         if (!rcb || error != IED_ERROR_OK) {
-            printf("Failed to get RCB values.\n");
-            IedConnection_destroy(con);
+            printf("RCB error for %s\n", hostConfig.reports[j].rcb);
             continue;
         }
 
@@ -1515,24 +1629,21 @@ int main(int argc, char** argv)
         ClientReportControlBlock_setGI(rcb, true);
 
         IedConnection_installReportHandler(con, hostConfig.reports[j].dataset,
-            ClientReportControlBlock_getRptId(rcb), reportCallbackFunction, dataSetDirectory);
+            ClientReportControlBlock_getRptId(rcb),
+            reportCallbackFunction, dataSetDirectory);
 
         IedConnection_setRCBValues(con, &error, rcb, RCB_ELEMENT_RPT_ENA | RCB_ELEMENT_GI, true);
 
-        sessions[sessionCount++] = (ReportSession){
-            .con = con,
-            .rcb = rcb,
-            .error = error,
-            .clientDataSet = dataSet,
-            .dataSetDirectory = dataSetDirectory,
-            .ip = hostConfig.ip,
-            .tcpPort = 102,
-            .dataset = hostConfig.reports[j].dataset,
-            .rcbName = hostConfig.reports[j].rcb,
-            .connected = true
-        };
-        
+        // Store in session
+        session.rcbList[j] = rcb;
+        session.dataSetDirectoryList[j] = dataSetDirectory;
+        session.clientDataSetList[j] = dataSet;
+        session.datasetList[j] = hostConfig.reports[j].dataset;
+        session.rcbNameList[j] = hostConfig.reports[j].rcb;
     }
+
+    sessions[sessionCount++] = session;
+
 
     // while (running) {
     //     for (int i = 0; i < sessionCount; i++) {
@@ -1556,84 +1667,63 @@ int main(int argc, char** argv)
         if (currentTime - lastTime >= interval) {
             lastTime = currentTime;
             // printf("sessioncount: %d\n", sessionCount);
-
             for (int i = 0; i < sessionCount; i++) {
-                processMessages(sessions[i].con, mqttClient); 
-                printf("Processing messages...\n");
+                ReportSession* session = &sessions[i];
+                processMessages(session->con, mqttClient); 
 
+                IedConnectionState state = IedConnection_getState(session->con);
+                if (state != IED_STATE_CONNECTED) {
+                    printf("Disconnected from %s. Reconnecting...\n", session->ip);
+                    session->connected = false;
 
-                if (!sessions[i].connected) {
-                    printf("Reconnecting to %s...\n", sessions[i].ip);
-                
-                    IedClientError error;
-                    IedConnection con = IedConnection_create();
-                    sessions[i].con = con;
+                    IedConnection_destroy(session->con);
+                    session->con = IedConnection_create();
+                    IedConnection_connect(session->con, &session->error, session->ip, session->tcpPort);
 
-                    IedConnection_connect(con, &error, sessions[i].ip, sessions[i].tcpPort);
-
-                    if (error != IED_ERROR_OK) {
-                        printf("Failed to connect to %s:%d (error: %d)\n", sessions[i].ip, sessions[i].tcpPort, error);
-                        IedConnection_destroy(con);
-                        sessions[i].connected = false;
-                        break;
-                    }
-                    sessions[i].error = error;
-
-                    ClientReportControlBlock_setResv(sessions[i].rcb, true);
-                    ClientReportControlBlock_setTrgOps(sessions[i].rcb, TRG_OPT_DATA_CHANGED | TRG_OPT_QUALITY_CHANGED | TRG_OPT_GI);
-                    ClientReportControlBlock_setDataSetReference(sessions[i].rcb, sessions[i].dataset);
-                    ClientReportControlBlock_setRptEna(sessions[i].rcb, true);
-                    ClientReportControlBlock_setGI(sessions[i].rcb, true);
-
-                    IedConnection_installReportHandler(
-                        sessions[i].con,
-                        sessions[i].dataset,
-                        ClientReportControlBlock_getRptId(sessions[i].rcb),
-                        reportCallbackFunction,
-                        (void*) sessions[i].dataSetDirectory
-                    );
-
-                    IedConnection_setRCBValues(
-                        sessions[i].con,
-                        &error,
-                        sessions[i].rcb,
-                        RCB_ELEMENT_RPT_ENA | RCB_ELEMENT_GI,
-                        true
-                    );
-
-                    if (error != IED_ERROR_OK) {
-                        printf("Failed to configure RCB on %s (error: %d)\n", sessions[i].ip, error);
-                        IedConnection_destroy(con);
-                        sessions[i].connected = false;
+                    if (session->error != IED_ERROR_OK) {
+                        printf("Reconnect failed to %s:%d\n", session->ip, session->tcpPort);
                         continue;
                     }
 
-                    sessions[i].connected = true;
-                    printf("Successfully reconnected to %s\n", sessions[i].ip);
-                    continue;
-                }
-                IedConnectionState state = IedConnection_getState(sessions[i].con);
-                if (state != IED_STATE_CONNECTED) {
-                    sessions[i].connected = false;
-                    printf("Session to %s disconnected.\n", sessions[i].ip);
-                } else {
-                    // MQTT publishing logic
-                    MQTTClient_message pubmsg = MQTTClient_message_initializer;
-                    char tesSend[100] = "test";
-                    pubmsg.payload = tesSend;
-                    pubmsg.payloadlen = (int)strlen(tesSend);
-                    pubmsg.qos = MQTT_QOS;
-                    pubmsg.retained = 0;
+                    session->connected = true;
 
-                    MQTTClient_deliveryToken token;
-                    int rc = MQTTClient_publishMessage(mqttClient, "topic", &pubmsg, &token);
-                    if (rc == MQTTCLIENT_SUCCESS) {
-                        MQTTClient_waitForCompletion(mqttClient, token, MQTT_TIMEOUT);
-                        printf("MQTT report published successfully.\n");
-                    } else {
-                        printf("MQTT publish failed: %d\n", rc);
-                        initMqttClient();
+                    for (int j = 0; j < session->reportCount; j++) {
+                        ClientReportControlBlock_setResv(session->rcbList[j], true);
+                        ClientReportControlBlock_setTrgOps(session->rcbList[j], TRG_OPT_DATA_CHANGED | TRG_OPT_QUALITY_CHANGED | TRG_OPT_GI);
+                        ClientReportControlBlock_setDataSetReference(session->rcbList[j], session->datasetList[j]);
+                        ClientReportControlBlock_setRptEna(session->rcbList[j], true);
+                        ClientReportControlBlock_setGI(session->rcbList[j], true);
+
+                        IedConnection_installReportHandler(session->con,
+                            session->datasetList[j],
+                            ClientReportControlBlock_getRptId(session->rcbList[j]),
+                            reportCallbackFunction,
+                            session->dataSetDirectoryList[j]);
+
+                        IedConnection_setRCBValues(session->con, &session->error,
+                            session->rcbList[j],
+                            RCB_ELEMENT_RPT_ENA | RCB_ELEMENT_GI, true);
                     }
+
+                    printf("Reconnected to %s\n", session->ip);
+                }
+
+                // Publish MQTT message for this session (can be per dataset/RCB as needed)
+                MQTTClient_message pubmsg = MQTTClient_message_initializer;
+                char tesSend[100] = "test";
+                pubmsg.payload = tesSend;
+                pubmsg.payloadlen = (int)strlen(tesSend);
+                pubmsg.qos = MQTT_QOS;
+                pubmsg.retained = 0;
+
+                MQTTClient_deliveryToken token;
+                int rc = MQTTClient_publishMessage(mqttClient, "topic", &pubmsg, &token);
+                if (rc == MQTTCLIENT_SUCCESS) {
+                    MQTTClient_waitForCompletion(mqttClient, token, MQTT_TIMEOUT);
+                    printf("MQTT published for %s\n", session->ip);
+                } else {
+                    printf("MQTT publish failed: %d\n", rc);
+                    initMqttClient();
                 }
             }
         }
@@ -1644,16 +1734,34 @@ int main(int argc, char** argv)
 
 
     for (int i = 0; i < sessionCount; i++) {
-        if (sessions[i].rcb) {
-            ClientReportControlBlock_setRptEna(sessions[i].rcb, false);
-            IedConnection_setRCBValues(sessions[i].con, NULL, sessions[i].rcb, RCB_ELEMENT_RPT_ENA, true);
+        ReportSession* session = &sessions[i];
+        printf("current time ms: %s\n", current_time_iso8601_ms_local());
+
+        // Cleanup each RCB and related resources
+        for (int j = 0; j < session->reportCount; j++) {
+            if (session->rcbList[j]) {
+                ClientReportControlBlock_setRptEna(session->rcbList[j], false);
+                IedConnection_setRCBValues(session->con, NULL, session->rcbList[j], RCB_ELEMENT_RPT_ENA, true);
+                ClientReportControlBlock_destroy(session->rcbList[j]);
+            }
+
+            if (session->clientDataSetList[j])
+                ClientDataSet_destroy(session->clientDataSetList[j]);
+
+            if (session->dataSetDirectoryList[j])
+                LinkedList_destroy(session->dataSetDirectoryList[j]);
         }
-        if (sessions[i].con) IedConnection_close(sessions[i].con);
-        if (sessions[i].clientDataSet) ClientDataSet_destroy(sessions[i].clientDataSet);
-        if (sessions[i].rcb) ClientReportControlBlock_destroy(sessions[i].rcb);
-        if (sessions[i].dataSetDirectory) LinkedList_destroy(sessions[i].dataSetDirectory);
-        if (sessions[i].con) IedConnection_destroy(sessions[i].con);
+
+        // Close and destroy the connection
+        if (session->con) {
+            IedConnection_close(session->con);
+            IedConnection_destroy(session->con);
+        }
     }
+
+    MQTTClient_disconnect(mqttClient, MQTT_TIMEOUT);
+    MQTTClient_destroy(&mqttClient);
+    printf("Client example reporting finished.\n");
 
     return 0;
 }
