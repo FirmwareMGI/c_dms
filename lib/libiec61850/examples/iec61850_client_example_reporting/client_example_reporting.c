@@ -27,18 +27,20 @@
 
 #define MAX_REPORTS_PER_DEVICE 5
 
-#define MQTT_ADDRESS     "tcp://192.168.2.33:1883"
+#define MQTT_ADDRESS     "tcp://203.194.112.238:1883"
 // #define MQTT_CLIENTID    "IEC61850_ReportClient"
 #define MQTT_QOS         2
 #define MQTT_TIMEOUT     10000L
+#define MQTT_USERNAME "das"
+#define MQTT_PASS "mgi2022"
 MQTTClient mqttClient;
 
 //// CONTROL VARIBLES ////
 int disc_finished = 0;
 int subscribed = 0;
 int finished = 0;
-char mqtt_topic_control_request[20];
-char mqtt_topic_control_response[20];
+char mqtt_topic_control_request[64];
+char mqtt_topic_control_response[64];
 
 
 bool TopicArrived = false;
@@ -214,6 +216,8 @@ int initMqttClient()
     MQTTClient_connectOptions conn_opts = MQTTClient_connectOptions_initializer;
     conn_opts.keepAliveInterval = 5;
     conn_opts.cleansession = 1;
+    conn_opts.username = MQTT_USERNAME;
+    conn_opts.password = MQTT_PASS;
     MQTTClient_setCallbacks(mqttClient, NULL, NULL, message_arrived_callback, NULL);
     rc = MQTTClient_connect(mqttClient, &conn_opts);
     if (rc != MQTTCLIENT_SUCCESS) {
@@ -223,8 +227,8 @@ int initMqttClient()
     }
 
     //TODO: change the topic to dynamic based on id_device and machine code
-    sprintf(mqtt_topic_control_request, "+/%d/control/request", 1);
-    sprintf(mqtt_topic_control_response, "DMS/%d/control/response", 1);
+    // sprintf(mqtt_topic_control_request, "+/%d/control/request", 1);
+    // sprintf(mqtt_topic_control_response, "DMS/%d/control/response", 1);
     rc = MQTTClient_subscribe(mqttClient, mqtt_topic_control_request, 1);
     if (rc != MQTTCLIENT_SUCCESS)
     {
@@ -275,6 +279,11 @@ void reportCallbackFunction(void* parameter, ClientReport report)
     char mqttMessage[1024] = "";
     char entryNameBuffer[100] = "";
 
+    if(dataSetDirectory == NULL || LinkedList_size(dataSetDirectory) == 0) {
+        printf("No data set directory available.\n");
+        return;
+    }
+
     for (int i = 0; i < LinkedList_size(dataSetDirectory); i++) {
         ReasonForInclusion reason = ClientReport_getReasonForInclusion(report, i);
 
@@ -291,17 +300,19 @@ void reportCallbackFunction(void* parameter, ClientReport report)
         snprintf(entryNameBuffer, sizeof(entryNameBuffer), "%s", entryName);
         char firstValue[100] = "unknown";
 
+        // printf("Processing entry: %s, reason: %d, value: %s\n", entryNameBuffer, reason, valBuffer);
+
         const char* alias = getAliasFromGlobalDataset(entryNameBuffer);
-        if (alias) {
-            printf("Alias for %s is %s\n", entryNameBuffer, alias);
-        } else {
-            printf("Alias for %s not found.\n", entryNameBuffer);
-        }
+        // if (alias) {
+        //     printf("Alias for %s is %s\n", entryNameBuffer, alias);
+        // } else {
+        //     printf("Alias for %s not found.\n", entryNameBuffer);
+        // }
 
         // Find the opening brace
         char* start = strchr(valBuffer, '{');
         if (start) {
-            // Move past the opening brace
+            // Move past the opening bracef
             start++;
             
             // Find the comma that ends the first value
@@ -351,7 +362,10 @@ void reportCallbackFunction(void* parameter, ClientReport report)
 /* === Config Loader === */
 int loadHostConfigs(const char* filename, HostConfig* host)
 {
-    FILE* fp = fopen(filename, "r");
+    char configFile[256];
+    snprintf(configFile, sizeof(configFile), "%s_parsed.json", filename);
+
+    FILE* fp = fopen(configFile, "r");
     if (!fp) {
         perror("Config file open failed");
         return 0;
@@ -392,8 +406,9 @@ int loadHostConfigs(const char* filename, HostConfig* host)
     }
 
     // Load CConfig3.json
-    // TODO : Dynamic naming
-    FILE* cfg = fopen("CConfig3.json", "r");
+    char datasetFile[256];
+    snprintf(datasetFile, sizeof(datasetFile), "%s_datasets.json", filename);
+    FILE* cfg = fopen(datasetFile, "r");
     if (!cfg) {
         perror("CConfig3.json open failed");
         cJSON_Delete(root);
@@ -966,14 +981,6 @@ int MQTT_publish(MQTTClient mqttClient, const char *topic, const char *msg)
     pubmsg.qos = MQTT_QOS;
     pubmsg.retained = 0;
 
-    // MQTTClient_deliveryToken token;
-    // int rc = MQTTClient_publishMessage(mqttClient, topic, &pubmsg, &token);
-    // if (rc != MQTTCLIENT_SUCCESS)
-    // {
-    //     // log_error("MQTT: %s", "Failed to publish message. Error: %d\n", rc);
-    //     return rc;
-    // }
-
     // MQTTClient_waitForCompletion(mqttClient, token, MQTT_TIMEOUT);
     MQTTClient_deliveryToken token;
         int rc = MQTTClient_publishMessage(mqttClient, topic, &pubmsg, &token);
@@ -1102,7 +1109,7 @@ void processMessages(IedConnection iecConn, MQTTClient mqttClient)
 
 
             MQTTClient_deliveryToken token;
-            int rc = MQTTClient_publishMessage(mqttClient, "topic2222", &pubmsg, &token);
+            int rc = MQTTClient_publishMessage(mqttClient, mqtt_topic_control_response, &pubmsg, &token);
             if (rc == MQTTCLIENT_SUCCESS) {
                 MQTTClient_waitForCompletion(mqttClient, token, MQTT_TIMEOUT);
                 // printf("MQTT report published successfully.\n"); //sads
@@ -1581,7 +1588,7 @@ int main(int argc, char** argv)
 
     const char* configFile = argv[1];
     HostConfig hostConfig;
-    initMqttClient();
+
 
     if (!loadHostConfigs(configFile, &hostConfig)) {
         printf("Failed to load host configuration.\n");
@@ -1592,6 +1599,11 @@ int main(int argc, char** argv)
     IedClientError error;
     IedConnection con = IedConnection_create();
     IedConnection_connect(con, &error, hostConfig.ip, 102);
+    snprintf(mqtt_topic_control_response, sizeof(mqtt_topic_control_response), "DMS/%s/IEC61850/%s/control/response", hostConfig.machineCode, hostConfig.id_device);
+    snprintf(mqtt_topic_control_request, sizeof(mqtt_topic_control_request), "DMS/%s/IEC61850/%s/control/request", hostConfig.machineCode, hostConfig.id_device);
+    
+    initMqttClient();
+
 
     if (error != IED_ERROR_OK) {
         printf("Connection failed to %s:%d (error %d)\n", hostConfig.ip, 102, error);
@@ -1739,11 +1751,11 @@ int main(int argc, char** argv)
 
         // Cleanup each RCB and related resources
         for (int j = 0; j < session->reportCount; j++) {
-            if (session->rcbList[j]) {
-                ClientReportControlBlock_setRptEna(session->rcbList[j], false);
-                IedConnection_setRCBValues(session->con, NULL, session->rcbList[j], RCB_ELEMENT_RPT_ENA, true);
-                ClientReportControlBlock_destroy(session->rcbList[j]);
-            }
+            // if (session->rcbList[j]) {
+            //     ClientReportControlBlock_setRptEna(session->rcbList[j], false);
+            //     IedConnection_setRCBValues(session->con, NULL, session->rcbList[j], RCB_ELEMENT_RPT_ENA, true);
+            //     ClientReportControlBlock_destroy(session->rcbList[j]);
+            // }
 
             if (session->clientDataSetList[j])
                 ClientDataSet_destroy(session->clientDataSetList[j]);
