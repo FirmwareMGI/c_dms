@@ -1,0 +1,75 @@
+src/CMakeFiles/iec61850-shared.dir/common/simple_allocator.c.o: \
+ /home/pi/c_dms/lib/libiec61850/src/common/simple_allocator.c \
+ /usr/include/stdc-predef.h \
+ /home/pi/c_dms/lib/libiec61850/src/common/inc/libiec61850_platform_includes.h \
+ /home/pi/c_dms/lib/libiec61850/buildc/config/stack_config.h \
+ /home/pi/c_dms/lib/libiec61850/src/common/inc/libiec61850_common_api.h \
+ /usr/include/stdlib.h \
+ /usr/include/arm-linux-gnueabihf/bits/libc-header-start.h \
+ /usr/include/features.h /usr/include/features-time64.h \
+ /usr/include/arm-linux-gnueabihf/bits/wordsize.h \
+ /usr/include/arm-linux-gnueabihf/bits/timesize.h \
+ /usr/include/arm-linux-gnueabihf/sys/cdefs.h \
+ /usr/include/arm-linux-gnueabihf/bits/long-double.h \
+ /usr/include/arm-linux-gnueabihf/gnu/stubs.h \
+ /usr/include/arm-linux-gnueabihf/gnu/stubs-hard.h \
+ /usr/lib/gcc/arm-linux-gnueabihf/12/include/stddef.h \
+ /usr/include/arm-linux-gnueabihf/bits/waitflags.h \
+ /usr/include/arm-linux-gnueabihf/bits/waitstatus.h \
+ /usr/include/arm-linux-gnueabihf/bits/floatn.h \
+ /usr/include/arm-linux-gnueabihf/bits/floatn-common.h \
+ /usr/include/arm-linux-gnueabihf/sys/types.h \
+ /usr/include/arm-linux-gnueabihf/bits/types.h \
+ /usr/include/arm-linux-gnueabihf/bits/typesizes.h \
+ /usr/include/arm-linux-gnueabihf/bits/time64.h \
+ /usr/include/arm-linux-gnueabihf/bits/types/clock_t.h \
+ /usr/include/arm-linux-gnueabihf/bits/types/clockid_t.h \
+ /usr/include/arm-linux-gnueabihf/bits/types/time_t.h \
+ /usr/include/arm-linux-gnueabihf/bits/types/timer_t.h \
+ /usr/include/arm-linux-gnueabihf/bits/stdint-intn.h \
+ /usr/include/endian.h /usr/include/arm-linux-gnueabihf/bits/endian.h \
+ /usr/include/arm-linux-gnueabihf/bits/endianness.h \
+ /usr/include/arm-linux-gnueabihf/bits/byteswap.h \
+ /usr/include/arm-linux-gnueabihf/bits/uintn-identity.h \
+ /usr/include/arm-linux-gnueabihf/sys/select.h \
+ /usr/include/arm-linux-gnueabihf/bits/select.h \
+ /usr/include/arm-linux-gnueabihf/bits/types/sigset_t.h \
+ /usr/include/arm-linux-gnueabihf/bits/types/__sigset_t.h \
+ /usr/include/arm-linux-gnueabihf/bits/types/struct_timeval.h \
+ /usr/include/arm-linux-gnueabihf/bits/types/struct_timespec.h \
+ /usr/include/arm-linux-gnueabihf/bits/pthreadtypes.h \
+ /usr/include/arm-linux-gnueabihf/bits/thread-shared-types.h \
+ /usr/include/arm-linux-gnueabihf/bits/pthreadtypes-arch.h \
+ /usr/include/arm-linux-gnueabihf/bits/atomic_wide_counter.h \
+ /usr/include/arm-linux-gnueabihf/bits/struct_mutex.h \
+ /usr/include/arm-linux-gnueabihf/bits/struct_rwlock.h \
+ /usr/include/alloca.h \
+ /usr/include/arm-linux-gnueabihf/bits/stdlib-float.h \
+ /usr/lib/gcc/arm-linux-gnueabihf/12/include/stdarg.h \
+ /usr/lib/gcc/arm-linux-gnueabihf/12/include/stdint.h \
+ /usr/include/stdint.h /usr/include/arm-linux-gnueabihf/bits/wchar.h \
+ /usr/include/arm-linux-gnueabihf/bits/stdint-uintn.h \
+ /usr/lib/gcc/arm-linux-gnueabihf/12/include/stdbool.h \
+ /usr/include/string.h \
+ /usr/include/arm-linux-gnueabihf/bits/types/locale_t.h \
+ /usr/include/arm-linux-gnueabihf/bits/types/__locale_t.h \
+ /usr/include/strings.h /home/pi/c_dms/lib/libiec61850/hal/inc/hal_time.h \
+ /home/pi/c_dms/lib/libiec61850/hal/inc/hal_base.h \
+ /home/pi/c_dms/lib/libiec61850/src/mms/inc/mms_value.h \
+ /home/pi/c_dms/lib/libiec61850/src/common/inc/libiec61850_common_api.h \
+ /home/pi/c_dms/lib/libiec61850/src/mms/inc/mms_common.h \
+ /home/pi/c_dms/lib/libiec61850/src/mms/inc/mms_types.h \
+ /home/pi/c_dms/lib/libiec61850/src/common/inc/string_utilities.h \
+ /home/pi/c_dms/lib/libiec61850/src/common/inc/linked_list.h \
+ /usr/include/stdio.h \
+ /usr/include/arm-linux-gnueabihf/bits/types/__fpos_t.h \
+ /usr/include/arm-linux-gnueabihf/bits/types/__mbstate_t.h \
+ /usr/include/arm-linux-gnueabihf/bits/types/__fpos64_t.h \
+ /usr/include/arm-linux-gnueabihf/bits/types/__FILE.h \
+ /usr/include/arm-linux-gnueabihf/bits/types/FILE.h \
+ /usr/include/arm-linux-gnueabihf/bits/types/struct_FILE.h \
+ /usr/include/arm-linux-gnueabihf/bits/stdio_lim.h \
+ /home/pi/c_dms/lib/libiec61850/hal/inc/platform_endian.h \
+ /usr/include/assert.h \
+ /home/pi/c_dms/lib/libiec61850/hal/inc/lib_memory.h \
+ /home/pi/c_dms/lib/libiec61850/src/common/inc/simple_allocator.h

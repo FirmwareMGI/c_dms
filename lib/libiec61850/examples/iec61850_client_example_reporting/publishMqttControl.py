@@ -5,7 +5,7 @@ import time
 # MQTT Configuration
 BROKER = "localhost"
 PORT = 1883
-TOPIC = "DMS/1/control/request"
+TOPIC = "DMS/0201160044/IEC61850/121/control/request"
 CLIENT_ID = "mqtt_iec_publisher"
 
 # Create client

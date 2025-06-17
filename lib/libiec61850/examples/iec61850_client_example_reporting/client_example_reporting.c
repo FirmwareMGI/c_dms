@@ -27,7 +27,7 @@
 
 #define MAX_REPORTS_PER_DEVICE 5
 
-#define MQTT_ADDRESS     "tcp://203.194.112.238:1883"
+#define MQTT_ADDRESS     "tcp://localhost:1883"
 // #define MQTT_CLIENTID    "IEC61850_ReportClient"
 #define MQTT_QOS         2
 #define MQTT_TIMEOUT     10000L
@@ -1598,15 +1598,18 @@ int main(int argc, char** argv)
     strncpy(id_device_, hostConfig.id_device, sizeof(id_device_));
     IedClientError error;
     IedConnection con = IedConnection_create();
-    IedConnection_connect(con, &error, hostConfig.ip, 102);
+    int port = atoi(hostConfig.port);
+    printf("Connecting to %s:%d\n", hostConfig.ip, port);
+    IedConnection_connect(con, &error, hostConfig.ip, port);
     snprintf(mqtt_topic_control_response, sizeof(mqtt_topic_control_response), "DMS/%s/IEC61850/%s/control/response", hostConfig.machineCode, hostConfig.id_device);
     snprintf(mqtt_topic_control_request, sizeof(mqtt_topic_control_request), "DMS/%s/IEC61850/%s/control/request", hostConfig.machineCode, hostConfig.id_device);
     
     initMqttClient();
 
 
+
     if (error != IED_ERROR_OK) {
-        printf("Connection failed to %s:%d (error %d)\n", hostConfig.ip, 102, error);
+        printf("Connection failed to %s:%d (error %d)\n", hostConfig.ip, port, error);
         IedConnection_destroy(con);
         return 0;
     }
@@ -1615,7 +1618,7 @@ int main(int argc, char** argv)
         .con = con,
         .error = error,
         .ip = hostConfig.ip,
-        .tcpPort = 102,
+        .tcpPort = port,
         .connected = true,
         .reportCount = hostConfig.reportCount
     };

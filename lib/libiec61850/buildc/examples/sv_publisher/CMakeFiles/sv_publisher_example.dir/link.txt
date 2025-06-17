@@ -1,0 +1,1 @@
+/usr/bin/cc  -Wredundant-decls -Wundef CMakeFiles/sv_publisher_example.dir/sv_publisher_example.c.o -o sv_publisher_example  ../../src/libiec61850.a ../../hal/libhal.a -lpthread -lm -lrt 

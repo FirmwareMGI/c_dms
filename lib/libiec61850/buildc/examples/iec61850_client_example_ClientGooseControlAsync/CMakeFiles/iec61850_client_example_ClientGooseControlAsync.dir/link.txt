@@ -1,0 +1,1 @@
+/usr/bin/cc  -Wredundant-decls -Wundef CMakeFiles/iec61850_client_example_ClientGooseControlAsync.dir/client_example_ClientGooseControlAsync.c.o -o iec61850_client_example_ClientGooseControlAsync  ../../src/libiec61850.a ../../hal/libhal.a -lpthread -lm -lrt 

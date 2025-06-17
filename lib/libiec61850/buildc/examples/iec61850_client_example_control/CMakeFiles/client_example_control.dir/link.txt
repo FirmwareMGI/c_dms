@@ -1,0 +1,1 @@
+/usr/bin/cc  -Wredundant-decls -Wundef CMakeFiles/client_example_control.dir/client_example_control.c.o -o client_example_control  ../../src/libiec61850.a ../../hal/libhal.a -lpthread -lm -lrt 

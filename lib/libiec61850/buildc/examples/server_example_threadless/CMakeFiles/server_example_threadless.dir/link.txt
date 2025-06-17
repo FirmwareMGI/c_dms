@@ -1,0 +1,1 @@
+/usr/bin/cc  -Wredundant-decls -Wundef CMakeFiles/server_example_threadless.dir/server_example_threadless.c.o CMakeFiles/server_example_threadless.dir/static_model.c.o -o server_example_threadless  ../../src/libiec61850.a ../../hal/libhal.a -lpthread -lm -lrt 

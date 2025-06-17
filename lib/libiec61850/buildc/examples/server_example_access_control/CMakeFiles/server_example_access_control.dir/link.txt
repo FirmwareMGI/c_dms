@@ -1,0 +1,1 @@
+/usr/bin/cc  -Wredundant-decls -Wundef CMakeFiles/server_example_access_control.dir/server_example_access_control.c.o CMakeFiles/server_example_access_control.dir/static_model.c.o -o server_example_access_control  ../../src/libiec61850.a ../../hal/libhal.a -lpthread -lm -lrt 

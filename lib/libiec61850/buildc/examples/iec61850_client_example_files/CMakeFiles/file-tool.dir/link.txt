@@ -1,0 +1,1 @@
+/usr/bin/cc  -Wredundant-decls -Wundef "CMakeFiles/file-tool.dir/file-tool.c.o" -o file-tool  ../../src/libiec61850.a ../../hal/libhal.a -lpthread -lm -lrt 

@@ -1,0 +1,1 @@
+/usr/bin/cc  -Wredundant-decls -Wundef CMakeFiles/server_example_config_file.dir/server_example_config_file.c.o -o server_example_config_file  ../../src/libiec61850.a ../../hal/libhal.a -lpthread -lm -lrt 

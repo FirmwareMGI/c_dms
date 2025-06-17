@@ -1,0 +1,1 @@
+/usr/bin/cc  -Wredundant-decls -Wundef CMakeFiles/server_example_password_auth.dir/server_example_password_auth.c.o CMakeFiles/server_example_password_auth.dir/static_model.c.o -o server_example_password_auth  ../../src/libiec61850.a ../../hal/libhal.a -lpthread -lm -lrt 

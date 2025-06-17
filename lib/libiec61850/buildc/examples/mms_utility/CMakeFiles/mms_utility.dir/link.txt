@@ -1,0 +1,1 @@
+/usr/bin/cc  -Wredundant-decls -Wundef CMakeFiles/mms_utility.dir/mms_utility.c.o -o mms_utility  ../../src/libiec61850.a ../../hal/libhal.a -lpthread -lm -lrt 

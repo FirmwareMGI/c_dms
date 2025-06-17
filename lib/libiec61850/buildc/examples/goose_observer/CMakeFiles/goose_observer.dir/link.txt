@@ -1,0 +1,1 @@
+/usr/bin/cc  -Wredundant-decls -Wundef CMakeFiles/goose_observer.dir/goose_observer.c.o -o goose_observer  ../../src/libiec61850.a ../../hal/libhal.a -lpthread -lm -lrt 
