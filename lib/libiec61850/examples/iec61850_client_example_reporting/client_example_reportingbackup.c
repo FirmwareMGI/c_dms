@@ -28,18 +28,12 @@
 #define MAX_REPORTS_PER_DEVICE 5
 
 #define MQTT_ADDRESS     "tcp://localhost:1883"
-#define MQTT_CLIENTID    "IEC61850_ReportClient"
+// #define MQTT_CLIENTID    "IEC61850_ReportClient"
 #define MQTT_QOS         2
 #define MQTT_TIMEOUT     10000L
 #define MQTT_USERNAME "mgi"
 #define MQTT_PASS "mel@2025"
 MQTTClient mqttClient;
-
-//const char* MQTT_ADDRESS;
-//int MQTT_QOS;
-//const char* MQTT_USERNAME;
-//const char* MQTT_PASS;
-//const int MQTT_TIMEOUT;
 
 //// CONTROL VARIBLES ////
 int disc_finished = 0;
@@ -55,7 +49,7 @@ char mqttpayload[200] = {'\0'};
 char mqtttopic[30];
 
 unsigned long lastTime = 0;
-const unsigned long interval = 5000;  // 3 seconds
+const unsigned long interval = 3000;  // 3 seconds
 
 // MQTT
 
@@ -180,47 +174,6 @@ void sigint_handler(int signalId)
     running = 0;
 }
 
-void load_env(const char *filename) {
-    FILE *fp = fopen(filename, "r");
-    if (!fp) {
-        perror("Failed to open .env file");
-        return;
-    }
-
-    char line[256];
-    while (fgets(line, sizeof(line), fp)) {
-        // Skip comments and empty lines
-        if (line[0] == '#' || line[0] == '\n') continue;
-
-        // Remove trailing newline
-        line[strcspn(line, "\n")] = 0;
-
-        char *equal_sign = strchr(line, '=');
-        if (!equal_sign) continue;
-
-        *equal_sign = '\0';
-        char *key = line;
-        char *value = equal_sign + 1;
-
-        setenv(key, value, 1);  // overwrite = 1
-    }
-
-    fclose(fp);
-}
-
-//void assign_globals_from_env() {
-//    MQTT_ADDRESS = getenv("MQTT_ADDRESS");
-//    //MQTT_QOS = getenv("MQTT_QOS");
-//    MQTT_USERNAME = getenv("MQTT_USERNAME");
-//    MQTT_PASS = getenv("MQTT_PASS");
-//    printf("MQTT_ADDRESS = %s\n", MQTT_ADDRESS);
-//    printf("MQTT_QOS     = %d\n", MQTT_QOS);
-//    printf("MQTT_USERNAME= %s\n", MQTT_USERNAME);
-//    printf("MQTT_PASS    = %s\n", MQTT_PASS);
-//    
-//}
-
-
 unsigned long millis() {
     struct timeval tv;
     gettimeofday(&tv, NULL);
@@ -310,7 +263,6 @@ void reportCallbackFunction(void* parameter, ClientReport report)
 {
     LinkedList dataSetDirectory = (LinkedList) parameter;
     MmsValue* dataSetValues = ClientReport_getDataSetValues(report);
-    
     char timestampBuf[64] = "";
 
     // Get current system time
@@ -331,7 +283,6 @@ void reportCallbackFunction(void* parameter, ClientReport report)
         printf("No data set directory available.\n");
         return;
     }
-    
 
     for (int i = 0; i < LinkedList_size(dataSetDirectory); i++) {
         ReasonForInclusion reason = ClientReport_getReasonForInclusion(report, i);
@@ -339,77 +290,18 @@ void reportCallbackFunction(void* parameter, ClientReport report)
         if (reason == IEC61850_REASON_NOT_INCLUDED)
             continue;
 
+        char valBuffer[500] = "no value";
         MmsValue* value = MmsValue_getElement(dataSetValues, i);
-        
-        char valBuffer[256] = {0};
-        char* data_type;
-                
-        if (value) {
-            memset(valBuffer, 0, sizeof(valBuffer));
-            MmsValue_printToBuffer(value, valBuffer, sizeof(valBuffer));
-        
-            printf("Full value (structure): %s\n", valBuffer);
-        
-            MmsValue* firstElement = MmsValue_getElement(value, 0);
+        if (value) MmsValue_printToBuffer(value, valBuffer, sizeof(valBuffer));
 
-            if (firstElement) {
-                int type = MmsValue_getType(firstElement);
-                data_type = MmsValue_getTypeString(firstElement);
-                printf("data_type: %s\n", data_type);
-            
-                memset(valBuffer, 0, sizeof(valBuffer));  // Clear before reuse
-            
-                if (type == MMS_STRUCTURE) {
-                    // Access second element (index 1) of the structure
-                    MmsValue* nested = MmsValue_getElement(value, 1); // <-- index 1 for second element
-                    if (nested) {
-                        MmsType nestedType = MmsValue_getType(nested);
-                        data_type = MmsValue_getTypeString(nested);
-                        printf("nested data_type: %s\n", data_type);
-            
-                        if (nestedType == MMS_BOOLEAN) {
-                            snprintf(valBuffer, sizeof(valBuffer), "%s", MmsValue_getBoolean(nested) ? "\"True\"" : "\"False\"");
-                        } else if (nestedType == MMS_BIT_STRING) {
-                            uint32_t intVal = MmsValue_getBitStringAsInteger(nested);
-                            snprintf(valBuffer, sizeof(valBuffer), "%u", intVal);
-                        } else {
-                            MmsValue_printToBuffer(nested, valBuffer, sizeof(valBuffer));
-                        }
-                    }
-                } 
-                else if (type == MMS_BOOLEAN) {
-                    snprintf(valBuffer, sizeof(valBuffer), "%s", MmsValue_getBoolean(firstElement) ? "\"True\"" : "\"False\"");
-                } else if (type == MMS_BIT_STRING) {
-                    uint32_t intVal = MmsValue_getBitStringAsInteger(firstElement);
-                    snprintf(valBuffer, sizeof(valBuffer), "%u", intVal);
-                } else {
-                    MmsValue_printToBuffer(firstElement, valBuffer, sizeof(valBuffer));
-                }
-            
-                printf("val name buffer: %s\n", valBuffer);
-            }
-
-        }
-        
         LinkedList entry = LinkedList_get(dataSetDirectory, i);
         char* entryName = (char*) entry->data;
-        snprintf(entryNameBuffer, sizeof(entryNameBuffer), "%s", entryName);
-        
-        char *bracketPos = strchr(entryNameBuffer, '[');
-        if (bracketPos) {
-            *bracketPos = '\0';  // Truncate string at '['
-        }
-       
-        
-        printf("entry name buffer: %s\n", entryNameBuffer);
 
-        
-        //char firstValue[100] = "unknown";
+        snprintf(entryNameBuffer, sizeof(entryNameBuffer), "%s", entryName);
+        char firstValue[100] = "unknown";
 
         // printf("Processing entry: %s, reason: %d, value: %s\n", entryNameBuffer, reason, valBuffer);
-        
-        //printf("component count %d\n", value->typeSpec.structure.elementCount);
-        
+
         const char* alias = getAliasFromGlobalDataset(entryNameBuffer);
         // if (alias) {
         //     printf("Alias for %s is %s\n", entryNameBuffer, alias);
@@ -418,30 +310,29 @@ void reportCallbackFunction(void* parameter, ClientReport report)
         // }
 
         // Find the opening brace
-//        char* start = strchr(valBuffer, '{');
-//        if (start) {
-//            // Move past the opening bracef
-//            start++;
-//            
-//            // Find the comma that ends the first value
-//            char* end = strchr(start, ',');
-//            if (end) {
-//                // Copy the first value into firstValue buffer
-//                size_t len = end - start;
-//                if (len < sizeof(firstValue)) {
-//                    strncpy(firstValue, start, len);
-//                    firstValue[len] = '\0'; // Null-terminate
-//                }
-//            }
-//        }
-        
-        
+        char* start = strchr(valBuffer, '{');
+        if (start) {
+            // Move past the opening bracef
+            start++;
+            
+            // Find the comma that ends the first value
+            char* end = strchr(start, ',');
+            if (end) {
+                // Copy the first value into firstValue buffer
+                size_t len = end - start;
+                if (len < sizeof(firstValue)) {
+                    strncpy(firstValue, start, len);
+                    firstValue[len] = '\0'; // Null-terminate
+                }
+            }
+        }
+
         // printf("First value: %s\n", firstValue);
 
         char line[600];
         snprintf(line, sizeof(line),
-        "{\"val\": %s, \"alias\": %s, \"timestamp\": \"%s\", \"dataType\": \"%s\" }", valBuffer, alias,timestampBuf, data_type);
-        printf("MASOK");
+        "{value: %s, alias: %s, \"timestamp\": \"%s\" }", firstValue, alias,timestampBuf);
+
         // printf("entry: %s, reason: %d, value: %s\n", entryName, reason, valBuffer);
         // printf("Formatted timestamp: %s\n", timestampBuf);
 
@@ -453,7 +344,7 @@ void reportCallbackFunction(void* parameter, ClientReport report)
         char topic[512];
         // printf("MachineCode: %s\n",);
         // printf("id_device_: %s\n", id_device_);
-        snprintf(topic, sizeof(topic), "DMS/%s/IEC61850/%s/%s", machine_code_,id_device_,entryNameBuffer);
+        snprintf(topic, sizeof(topic), "DMS/%s/IEC61850/Reports/%s/%s", machine_code_,id_device_,entryNameBuffer);
 
 
 
@@ -468,39 +359,11 @@ void reportCallbackFunction(void* parameter, ClientReport report)
     }
 }
 
-void replace_type(const char* originalPath, const char* replacement, char* resultPath, size_t size) {
-    const char* pos = strstr(originalPath, "TYPE");
-    if (pos != NULL) {
-        size_t prefixLen = pos - originalPath;
-        snprintf(resultPath, size, "%.*s%s%s",
-                 (int)prefixLen, originalPath,     // copy up to "TYPE"
-                 replacement,                      // insert replacement
-                 pos + strlen("TYPE"));            // append remainder
-    } else {
-        // fallback if "TYPE" not found
-        snprintf(resultPath, size, "%s", originalPath);
-    }
-}
-
-
 /* === Config Loader === */
 int loadHostConfigs(const char* filename, HostConfig* host)
 {
-    char configPath[256];
-    char datasetPath[256];
-    
-    replace_type(filename, "report-jsons", configPath, sizeof(configPath));
-    replace_type(filename, "cid-jsons", datasetPath, sizeof(datasetPath));
-    
-    char configFile[300];
-    snprintf(configFile, sizeof(configFile), "%s_parsed.json", configPath);
-    
-    char datasetFile[300];
-    snprintf(datasetFile, sizeof(datasetFile), "%s_datasets.json", datasetPath);
-    
-    printf("config File: %s\n", configFile);
-    printf("dataset File: %s\n", datasetFile);
-
+    char configFile[256];
+    snprintf(configFile, sizeof(configFile), "%s_parsed.json", filename);
 
     FILE* fp = fopen(configFile, "r");
     if (!fp) {
@@ -542,6 +405,9 @@ int loadHostConfigs(const char* filename, HostConfig* host)
         return 0;
     }
 
+    // Load CConfig3.json
+    char datasetFile[256];
+    snprintf(datasetFile, sizeof(datasetFile), "%s_datasets.json", filename);
     FILE* cfg = fopen(datasetFile, "r");
     if (!cfg) {
         perror("CConfig3.json open failed");
@@ -1092,7 +958,7 @@ void processIEC61850Control(IedConnection iecConn, const char *ctlModel, Receive
         if (strcmp(ctlModel, "direct-with-enhanced-security") == 0)
         {
             ResponseControl RespDirectSecurity;
-            printf("IEC61850: Control :%s", "direct security command");
+            // log_info("IEC61850: Control :%s", "direct security command");
             IEC61850_control_direct_security_ex(iecConn, rc.object, rc, &RespDirectSecurity);
             memcpy(iecRc, &RespDirectSecurity, sizeof(ResponseControl));
         }
@@ -1187,7 +1053,7 @@ void processMessages(IedConnection iecConn, MQTTClient mqttClient)
             // printf(" lastValue: %s\n", revCtrlObj.lastValue);
             // printf(" typeData: %s\n", revCtrlObj.typeData);
             // printf(" ctlCommand: %s\n", revCtrlObj.ctlCommand);
-            printf(" interlocking: %s\n", revCtrlObj.interlocking ? "true" : "false");
+            // printf(" interlocking: %s\n", revCtrlObj.interlocking ? "true" : "false");
             // printf(" synchrocheck: %s\n", revCtrlObj.synchrocheck ? "true" : "false");
             // printf(" testmode: %s\n", revCtrlObj.testmode ? "true" : "false");
             // printf(" timestamp: %" PRId64 "\n", revCtrlObj.timestamp);
@@ -1431,7 +1297,7 @@ int IEC61850_control_direct_normal_ex(IedConnection con, char *control_obj, Rece
         ctlVal = createDynamicMMS(rc.typeData, rc.valueNow);
         strcpy(resp->valueNow, rc.valueNow);
 
-        ControlObjectClient_setOrigin(control, "ABC", 2);
+        ControlObjectClient_setOrigin(control, NULL, 3);
 
         if (ControlObjectClient_operate(control, ctlVal, 0 /* operate now */))
         {
@@ -1476,8 +1342,6 @@ int IEC61850_control_sbo_normal_ex(IedConnection con, char *control_obj, Receive
         if (ControlObjectClient_select(control))
         {
             ctlVal = createDynamicMMS(rc.typeData, rc.valueNow);
-            ControlObjectClient_setInterlockCheck(control, false);
-            ControlObjectClient_setOrigin(control, "ABC", 2);
             strcpy(resp->valueNow, rc.valueNow);
             if (ControlObjectClient_operate(control, ctlVal, 0 /* operate now */))
             {
@@ -1524,14 +1388,11 @@ int IEC61850_control_direct_security_ex(IedConnection con, char *control_obj, Re
     strcpy(resp->iecErrorString, "none");
     strcpy(resp->errorString, "none");
     ControlObjectClient control = ControlObjectClient_create(direct_security_ctl_obj, con);
-    //ControlObjectClient_setInterlockCheck(control, false);
-    ControlObjectClient_setOrigin(control, "ABC", 2);
 
     if (control)
     {
         ControlObjectClient_setCommandTerminationHandler(control, commandTerminationHandler, NULL);
-        
-        
+
         ctlVal = createDynamicMMS(rc.typeData, rc.valueNow);
         strcpy(resp->valueNow, rc.valueNow);
         if (ControlObjectClient_operate(control, ctlVal, 0 /* operate now */))
@@ -1571,8 +1432,6 @@ int IEC61850_control_sbo_security_ex(IedConnection con, char *control_obj, Recei
     //  ***********************************************/
     const char *select_security_ctl_obj = control_obj;
     ControlObjectClient control = ControlObjectClient_create(select_security_ctl_obj, con);
-    ControlObjectClient_setInterlockCheck(control, rc.interlocking);
-    ControlObjectClient_setOrigin(control, "ABC", 2);
     
     strcpy(resp->valueNow, rc.valueNow);
     strcpy(resp->ctlCommand, "sbo");
@@ -1584,8 +1443,7 @@ int IEC61850_control_sbo_security_ex(IedConnection con, char *control_obj, Recei
     if (control)
     {
         ControlObjectClient_setCommandTerminationHandler(control, commandTerminationHandler, NULL);
-        //ControlObjectClient_setInterlockCheck(control, rc.interlocking);
-        
+
         ctlVal = createDynamicMMS(rc.typeData, rc.valueNow);
         strcpy(resp->valueNow, rc.valueNow);
 
@@ -1608,7 +1466,7 @@ int IEC61850_control_sbo_security_ex(IedConnection con, char *control_obj, Recei
         {
             printf("failed to select %s!\n", select_security_ctl_obj);
             strcpy(resp->status, "failed");
-            strcpy(resp->errorString, "failed to select");
+            strcpy(resp->errorString, "value not changed");
         }
 
         MmsValue_delete(ctlVal);
@@ -1640,8 +1498,6 @@ int IEC61850_control_direct_security_exp_ex(IedConnection con, char *control_obj
     strcpy(resp->iecErrorString, "none");
     strcpy(resp->errorString, "none");
     ControlObjectClient control = ControlObjectClient_create(direct_sec_ct_ctl_obj, con);
-    //ControlObjectClient_setInterlockCheck(control, false);
-    ControlObjectClient_setOrigin(control, "ABC", 2);
 
     if (control)
     {
@@ -1657,7 +1513,7 @@ int IEC61850_control_direct_security_exp_ex(IedConnection con, char *control_obj
         {
             printf("failed to operate %s\n", direct_sec_ct_ctl_obj);
             strcpy(resp->status, "failed");
-            strcpy(resp->errorString, "failed to operate");
+            strcpy(resp->errorString, "value not changed");
         }
 
         MmsValue_delete(ctlVal);
@@ -1722,9 +1578,6 @@ int IEC61850_control_cancel_ex(IedConnection con, char *control_obj, ResponseCon
 /* === Main Logic === */
 int main(int argc, char** argv)
 {
-    //load_env("/home/mgi/dms/c_dms/lib/libiec61850/examples/iec61850_client_example_reporting/.env");
-    //assign_globals_from_env();
-    
     signal(SIGINT, sigint_handler);
 
     if (argc < 2) {
@@ -1740,7 +1593,6 @@ int main(int argc, char** argv)
         printf("Failed to load host configuration.\n");
         return 1;
     }
-    
     strncpy(machine_code_, hostConfig.machineCode, sizeof(machine_code_));
     strncpy(id_device_, hostConfig.id_device, sizeof(id_device_));
     IedClientError error;
@@ -1750,6 +1602,7 @@ int main(int argc, char** argv)
     IedConnection_connect(con, &error, hostConfig.ip, port);
     snprintf(mqtt_topic_control_response, sizeof(mqtt_topic_control_response), "DMS/%s/IEC61850/%s/control/response", hostConfig.machineCode, hostConfig.id_device);
     snprintf(mqtt_topic_control_request, sizeof(mqtt_topic_control_request), "DMS/%s/IEC61850/%s/control/request", hostConfig.machineCode, hostConfig.id_device);
+    
     initMqttClient();
 
 
