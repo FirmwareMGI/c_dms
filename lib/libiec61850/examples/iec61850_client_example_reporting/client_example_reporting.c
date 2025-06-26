@@ -55,7 +55,7 @@ char mqttpayload[200] = {'\0'};
 char mqtttopic[30];
 
 unsigned long lastTime = 0;
-const unsigned long interval = 5000;  // 3 seconds
+const unsigned long interval = 3000;  // 3 seconds
 
 // MQTT
 
@@ -343,6 +343,17 @@ void reportCallbackFunction(void* parameter, ClientReport report)
         
         char valBuffer[256] = {0};
         char* data_type;
+        LinkedList entry = LinkedList_get(dataSetDirectory, i);
+        char* entryName = (char*) entry->data;
+        snprintf(entryNameBuffer, sizeof(entryNameBuffer), "%s", entryName);
+        
+        char *bracketPos = strchr(entryNameBuffer, '[');
+        if (bracketPos) {
+            *bracketPos = '\0';  // Truncate string at '['
+        }
+       
+        
+        printf("entry name buffer: %s\n", entryNameBuffer);
                 
         if (value) {
             memset(valBuffer, 0, sizeof(valBuffer));
@@ -360,23 +371,109 @@ void reportCallbackFunction(void* parameter, ClientReport report)
                 memset(valBuffer, 0, sizeof(valBuffer));  // Clear before reuse
             
                 if (type == MMS_STRUCTURE) {
-                    // Access second element (index 1) of the structure
-                    MmsValue* nested = MmsValue_getElement(value, 1); // <-- index 1 for second element
-                    if (nested) {
-                        MmsType nestedType = MmsValue_getType(nested);
-                        data_type = MmsValue_getTypeString(nested);
-                        printf("nested data_type: %s\n", data_type);
-            
-                        if (nestedType == MMS_BOOLEAN) {
-                            snprintf(valBuffer, sizeof(valBuffer), "%s", MmsValue_getBoolean(nested) ? "\"True\"" : "\"False\"");
-                        } else if (nestedType == MMS_BIT_STRING) {
-                            uint32_t intVal = MmsValue_getBitStringAsInteger(nested);
-                            snprintf(valBuffer, sizeof(valBuffer), "%u", intVal);
-                        } else {
-                            MmsValue_printToBuffer(nested, valBuffer, sizeof(valBuffer));
+                    int structSize = MmsValue_getArraySize(firstElement);
+                    printf("Structure contains %d elements\n", structSize);
+                
+                    memset(valBuffer, 0, sizeof(valBuffer));  // Clear the buffer
+                    char tempBuffer[256];
+                    
+                    if ((structSize > 0) && (structSize < 4)) {
+                        // Simpler case: Hz or single values like {{50.0},...}
+                        MmsValue* lv1 = MmsValue_getElement(value, 0);
+                        if (lv1 && MmsValue_getType(lv1) == MMS_STRUCTURE) {
+                            MmsValue* lv2 = MmsValue_getElement(lv1, 0);
+                            if (lv2) {
+                                data_type = MmsValue_getTypeString(lv2);
+                                printf("data_type: %s\n", data_type);
+                                MmsValue_printToBuffer(lv2, valBuffer, sizeof(valBuffer));
+                            }
                         }
-                    }
-                } 
+                    } 
+                    else {
+                        // Fallback: just print entire structure
+                        MmsValue_printToBuffer(firstElement, valBuffer, sizeof(valBuffer));
+                    }                                        
+                
+                    if (structSize == 4) {
+                        // Deep nested structures: A, PhV, PPV (assuming 3 phases R S T)
+                        const char* alias_base = getAliasFromGlobalDataset(entryNameBuffer);
+                        const char* suffixes[] = { "R", "S", "T" };
+                    
+                        for (int j = 0; j < 3; j++) {
+                            char topic[512];
+                            char alias_modified[100];
+                            char tempValBuffer[256] = {0};
+                            data_type = "unknown";
+                    
+                            MmsValue* lv1 = MmsValue_getElement(value, j);  // Level 1
+                            if (lv1 && MmsValue_getType(lv1) == MMS_STRUCTURE) {
+                                MmsValue* lv2 = MmsValue_getElement(lv1, 0);  // Should be another structure
+                                if (lv2 && MmsValue_getType(lv2) == MMS_STRUCTURE) {
+                                    MmsValue* lv22 = MmsValue_getElement(lv2, 0);
+                                    MmsValue* lv3 = MmsValue_getElement(lv22, 0);
+                    
+                                    if (lv3) {
+                                        data_type = MmsValue_getTypeString(lv3);
+                                        MmsValue_printToBuffer(lv3, tempValBuffer, sizeof(tempValBuffer));
+                                    }
+                                }
+                            }
+                    
+                            // Modify topic and alias for each phase
+                            snprintf(topic, sizeof(topic), "DMS/%s/IEC61850/%s/%s.%s", machine_code_, id_device_, entryNameBuffer, suffixes[j]);
+                            snprintf(alias_modified, sizeof(alias_modified), "%s-%d", alias_base ? alias_base : "unknown", j + 1);
+                    
+                            // Prepare JSON
+                            char jsonLine[600];
+                            snprintf(jsonLine, sizeof(jsonLine),
+                                "{\"val\": %s, \"alias\": \"%s\", \"timestamp\": \"%s\", \"dataType\": \"%s\" }",
+                                tempValBuffer, alias_modified, timestampBuf, data_type);
+                    
+                            // Publish
+                            MQTTClient_message pubmsg = MQTTClient_message_initializer;
+                            pubmsg.payload = jsonLine;
+                            pubmsg.payloadlen = (int)strlen(jsonLine);
+                            pubmsg.qos = MQTT_QOS;
+                            pubmsg.retained = 1;
+                    
+                            MQTTClient_deliveryToken token;
+                            int rc = MQTTClient_publishMessage(mqttClient, topic, &pubmsg, &token);
+                            if (rc == MQTTCLIENT_SUCCESS) {
+                                MQTTClient_waitForCompletion(mqttClient, token, MQTT_TIMEOUT);
+                            } else {
+                                printf("MQTT publish failed: %d\n", rc);
+                            }
+                        }
+                    
+                        continue;  // Skip rest of processing for this 4-element structure                    
+
+                
+                        // ?? Uncomment below to collect ALL values inside each structure (not just the first)
+                        /*
+                        for (int i = 0; i < 4; i++) {
+                            MmsValue* lv1 = MmsValue_getElement(value, i);  // Level 1
+                            if (lv1 && MmsValue_getType(lv1) == MMS_STRUCTURE) {
+                                int innerSize = MmsValue_getArraySize(lv1);
+                                for (int j = 0; j < innerSize; j++) {
+                                    MmsValue* inner = MmsValue_getElement(lv1, j);
+                                    if (inner) {
+                                        MmsValue_printToBuffer(inner, tempBuffer, sizeof(tempBuffer));
+                                        strcat(valBuffer, tempBuffer);
+                                        if (j < innerSize - 1) strcat(valBuffer, ";");
+                                    }
+                                }
+                                if (i < 3) strcat(valBuffer, ",");  // Comma between outer elements
+                            }
+                        }
+                        */
+                    } 
+                    
+                }
+
+
+//////////////////////////////////////////////////////////////////////////////////
+
+
                 else if (type == MMS_BOOLEAN) {
                     snprintf(valBuffer, sizeof(valBuffer), "%s", MmsValue_getBoolean(firstElement) ? "\"True\"" : "\"False\"");
                 } else if (type == MMS_BIT_STRING) {
@@ -391,17 +488,7 @@ void reportCallbackFunction(void* parameter, ClientReport report)
 
         }
         
-        LinkedList entry = LinkedList_get(dataSetDirectory, i);
-        char* entryName = (char*) entry->data;
-        snprintf(entryNameBuffer, sizeof(entryNameBuffer), "%s", entryName);
         
-        char *bracketPos = strchr(entryNameBuffer, '[');
-        if (bracketPos) {
-            *bracketPos = '\0';  // Truncate string at '['
-        }
-       
-        
-        printf("entry name buffer: %s\n", entryNameBuffer);
 
         
         //char firstValue[100] = "unknown";
@@ -449,7 +536,7 @@ void reportCallbackFunction(void* parameter, ClientReport report)
         pubmsg.payload = line;
         pubmsg.payloadlen = (int)strlen(line);
         pubmsg.qos = MQTT_QOS;
-        pubmsg.retained = 0;
+        pubmsg.retained = 1;
         char topic[512];
         // printf("MachineCode: %s\n",);
         // printf("id_device_: %s\n", id_device_);
@@ -1394,9 +1481,9 @@ MmsValue *createDynamicMMS(char *_type, char *value)
     // log_info("VALUE: %s", value);
     if (strcmp(_type, "boolean") == 0)
     {
-        if (strcmp(value, "false") == 0)
+        if ((strcmp(value, "false") == 0) || (strcmp(value, "False") == 0))
             return MmsValue_newBoolean(false);
-        else if (strcmp(value, "true") == 0)
+        else if((strcmp(value, "true") == 0) || (strcmp(value, "True") == 0))
             return MmsValue_newBoolean(true);
     }
     if (strcmp(_type, "bit-string") == 0)
@@ -1524,7 +1611,7 @@ int IEC61850_control_direct_security_ex(IedConnection con, char *control_obj, Re
     strcpy(resp->iecErrorString, "none");
     strcpy(resp->errorString, "none");
     ControlObjectClient control = ControlObjectClient_create(direct_security_ctl_obj, con);
-    //ControlObjectClient_setInterlockCheck(control, false);
+    ControlObjectClient_setInterlockCheck(control, rc.interlocking);
     ControlObjectClient_setOrigin(control, "ABC", 2);
 
     if (control)
@@ -1550,7 +1637,7 @@ int IEC61850_control_direct_security_ex(IedConnection con, char *control_obj, Re
         MmsValue_delete(ctlVal);
 
         /* Wait for command termination message */
-        Thread_sleep(1000);
+        //Thread_sleep(1000);
 
         ControlObjectClient_destroy(control);
     }
@@ -1585,7 +1672,7 @@ int IEC61850_control_sbo_security_ex(IedConnection con, char *control_obj, Recei
     {
         ControlObjectClient_setCommandTerminationHandler(control, commandTerminationHandler, NULL);
         //ControlObjectClient_setInterlockCheck(control, rc.interlocking);
-        
+        printf("rc.valueNow %s\n",rc.valueNow);
         ctlVal = createDynamicMMS(rc.typeData, rc.valueNow);
         strcpy(resp->valueNow, rc.valueNow);
 
@@ -1613,7 +1700,7 @@ int IEC61850_control_sbo_security_ex(IedConnection con, char *control_obj, Recei
 
         MmsValue_delete(ctlVal);
 
-        Thread_sleep(1000);
+        //Thread_sleep(1000);
 
         ControlObjectClient_destroy(control);
     }
@@ -1661,7 +1748,7 @@ int IEC61850_control_direct_security_exp_ex(IedConnection con, char *control_obj
         }
 
         MmsValue_delete(ctlVal);
-        Thread_sleep(1000);
+        //Thread_sleep(1000);
 
         ControlObjectClient_destroy(control);
     }
@@ -1703,7 +1790,7 @@ int IEC61850_control_cancel_ex(IedConnection con, char *control_obj, ResponseCon
             strcpy(resp->errorString, "object not found");
         }
 
-        Thread_sleep(1000);
+        //Thread_sleep(1000);
 
         ControlObjectClient_destroy(control);
     }
@@ -1788,7 +1875,8 @@ int main(int argc, char** argv)
         ClientReportControlBlock_setDataSetReference(rcb, hostConfig.reports[j].dataset);
         ClientReportControlBlock_setRptEna(rcb, true);
         ClientReportControlBlock_setGI(rcb, true);
-
+        
+        //printf("rcb: %s \n", rcb);
         IedConnection_installReportHandler(con, hostConfig.reports[j].dataset,
             ClientReportControlBlock_getRptId(rcb),
             reportCallbackFunction, dataSetDirectory);
@@ -1833,6 +1921,11 @@ int main(int argc, char** argv)
                 processMessages(session->con, mqttClient); 
 
                 IedConnectionState state = IedConnection_getState(session->con);
+//                printf("rcb %s \n", session->rcbNameList[0]);
+//                IedConnection_triggerGIReport(session->con, &session->error, session->rcbList[0]);
+//                for (int j = 0; j < session->reportCount; j++) {
+//                    IedConnection_triggerGIReport(session->con, &session->error, session->rcbNameList[j]);
+//                }
                 if (state != IED_STATE_CONNECTED) {
                     printf("Disconnected from %s. Reconnecting...\n", session->ip);
                     session->connected = false;
@@ -1890,7 +1983,7 @@ int main(int argc, char** argv)
         }
 
         // Prevent CPU overload
-        usleep(100000); // sleep 1ms
+        usleep(1000); // sleep 1ms
     }
 
 
